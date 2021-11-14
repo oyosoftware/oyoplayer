@@ -22,16 +22,11 @@
 <p>jQuery audio player.</p>
 <h3>Features</h3>
 <ul>
-  <li>Use buttons for handling media.</li>
-  <li>Graphics are based on SVG.</li>
-  <li>Buttons can be enabled/disabled.</li>
-  <li>Buttons can have multiple states with different looks.</li>
-  <li>Automatic state change, can also be set.</li>
-  <li>Posibility for free buttons.</li>
-  <li>Function for creating SVG content elements.</li>
-  <li>Function for creating radial gradients.</li>
-  <li>Colors can be changed.</li>
-  <li>Buttons can be scaled without losing space.</li>
+  <li>A simple audio player with a marquee for showing audio information .</li>
+  <li>More stable than the original html5 element because of the event handling.</li>
+  <li>Works with playlists.</li>
+  <li></li>
+
 </ul>
 <h2>Contact</h2>
 <ul>
