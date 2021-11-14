@@ -13,7 +13,7 @@
 </div>
 <ul>
   <li><strong>category</strong> </li>
-  <li><strong>copyright</strong> 2021 oyosoftware </li>
+  <li><strong>copyright</strong> 2015-2021 oyosoftware </li>
   <li><strong>license</strong> MIT License</li>
   <li><strong>link</strong> http://www.oyoweb.nl/music/plugins/oyoplayer/testplayer1.html</li>
   <li><strong>source</strong> https://github.com/oyosoftware/oyoplayer</li>
