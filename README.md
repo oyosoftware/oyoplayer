@@ -24,9 +24,16 @@
 <ul>
   <li>A simple audio player with a marquee for showing audio information .</li>
   <li>More stable than the original html5 element because of the event handling.</li>
+  <li>You don't have to worry about local files on a sever. It uses a combination of blobs and symbolic links that can play anything, except for mapped network drives.</li>
+  <li>Supported formats are flac, mp3, ogg and wav.</li>
   <li>Works with playlists.</li>
-  <li></li>
-
+  <li>Play all songs or just one.</li>
+  <li>Can play samples.</li>
+  <li>Scrolling marquee can be set on/off.</li>
+  <li>Scrobble detection according to last.fm.</li>
+  <li>First notification in the marquee before playing can be set.</li>
+  <li>Has play/pause function.</li>
+  <li>Has skip functions for previous and next.</li>
 </ul>
 <h2>Contact</h2>
 <ul>
