@@ -1,0 +1,200 @@
+<html>
+    <head>
+        <title>Player status</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://code.jquery.com/jquery-3.4.0.js"></script>
+        <script src="oyoplayer.js"></script>
+        <link rel="stylesheet" href="oyoplayer.css">
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            .player {
+                //display: none;
+                position: fixed;
+                top: 0px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+                z-index: 1;
+                background-color: white;
+                width: 100%;
+                height: 100px;
+            }
+            .buttons {
+                position: fixed;
+                top: 25px;
+                left: 525px;
+                z-index: 1;
+                white-space: nowrap;
+            }
+            button {
+                display: block;
+                margin: 4px;
+            }
+            form {
+                position: fixed;
+                top: 95px;
+                z-index: 1;
+                background-color: white;
+                width: 100%;
+                height: 35px;
+                margin: 0px;
+                white-space: nowrap;
+            }
+            input {
+                outline: none;
+            }
+            .line {
+                position: fixed;
+                top: 130px;;
+                border-top: 1px solid black;
+                width: 100%;
+            }
+            .div1 {
+                position: relative;
+                top: 123px;
+                padding-left: 8px;
+                padding-right: 8px;
+                display: inline-block;
+                white-space: nowrap;
+                border: 1px solid black;
+                min-width: 200px;
+            }
+
+        </style>
+    </head>
+    <body>
+        <script>
+
+            $(document).ready(function () {
+
+                var name = "player1";
+                audioPlayer = new oyoPlayer(name);
+                $(".player").append(audioPlayer);
+
+                audioPlayer.addToPlaylist("The Step.mp3", "!!! - The Step");
+                audioPlayer.addToPlaylist("Drop Shot.mp3", "TaxiWars - Drop Shot");
+                audioPlayer.addToPlaylist("How To Disappear Completely.mp3", "Radiohead - How To Disappear Completely");
+                audioPlayer.addToPlaylist("https://stream.player.arrow.nl/arrow", "Arrow Classic Rock");
+                //audioPlayer.addToPlaylist("https://www.mp3streams.nl/zender/arrow-classic-rock/stream/13-mp3-128", "Arrow Classic Rock MP3 Streams");
+
+                audioPlayer.setSourceIndex(1);
+                audioPlayer.setNotification("Push Play to start.");
+
+                var audioobject = "audio[name=" + name + "]";
+                audio = $(audioobject)[0];
+
+                $("input").each(function (index, element) {
+                    if (window.localStorage.getItem(element.name)) {
+                        element.checked = (window.localStorage.getItem(element.name) === "true");
+                    }
+                    if (element.checked) {
+                        $(audio).on(element.name, showStatus);
+                    }
+                });
+
+                function showStatus(event) {
+                    var div1 = document.createElement("div");
+                    $(div1).attr("class", "div1");
+                    $("body").append(div1);
+                    if (event !== undefined) {
+                        var div2 = document.createElement("div");
+                        $(div2).html("event: " + event.type);
+                        $(div2).css("font-weight", "bold");
+                        $(div2).css("text-decoration", "underline");
+                        $(div1).append(div2);
+                    }
+                    var div2 = document.createElement("div");
+                    var date = new Date();
+                    var datestring = "time: " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "." + date.getMilliseconds();
+                    $(div2).html(datestring);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("track: " + audioPlayer.getCurrentTrack());
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("tag: " + audioPlayer.getSongs()[audioPlayer.getCurrentTrack()].tag);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("currentTime: " + audio.currentTime.toFixed(3));
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("duration: " + audio.duration.toFixed(3));
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("active: " + audioPlayer.state.active);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("readyState: " + audio.readyState);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("is playing: " + audioPlayer.state.playing);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("is paused: " + audioPlayer.state.paused);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("paused: " + audio.paused);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("ended: " + audio.ended);
+                    $(div1).append(div2);
+                    var div2 = document.createElement("div");
+                    $(div2).html("seeking: " + audio.seeking);
+                    $(div1).append(div2);
+//                    var div2 = document.createElement("div");
+//                    $(div2).html("error: " + audio.error);
+//                    $(div1).append(div2);
+                }
+
+                $("input").on("change", function (event) {
+                    if (event.target.checked) {
+                        $(audio).on(event.target.name, showStatus);
+                    } else {
+                        $(audio).off(event.target.name, showStatus);
+                    }
+                    window.localStorage.setItem(event.target.name, event.target.checked);
+                });
+
+                $(".clear").on("click", function (event) {
+                    $(".div1").remove();
+                });
+
+                $(".next").on("click", function (event) {
+                    audioPlayer.skipNext();
+                });
+
+            });
+        </script>
+
+        <div class="player"></div>
+        <div class="buttons">
+            <button class="clear" accesskey="c"><span><u>C</u></span>lear Messages</button>
+            <button class="next" accesskey="n"><span><u>N</u></span>ext Song</button>
+        </div>
+        <div class="arrow"></div>
+        <form>
+            <input type="checkbox" name="canplay"/>
+            <label>canplay</label>
+            <input type="checkbox" name="playing"/>
+            <label>playing</label>
+            <input type="checkbox" name="pause"/>
+            <label>pause</label>
+            <input type="checkbox" name="ended"/>
+            <label>ended</label>
+            <input type="checkbox" name="seeking"/>
+            <label>seeking</label>
+            <input type="checkbox" name="error"/>
+            <label>error</label>
+            <input type="checkbox" name="loadeddata"/>
+            <label>loadeddata</label>
+            <input type="checkbox" name="timeupdate"/>
+            <label>timeupdate</label>
+            <input type="checkbox" name="loadedmetadata"/>
+            <label>loadedmetadata</label>
+        </form>
+        <div class="line"></div>
+
+    </body>
+</html>

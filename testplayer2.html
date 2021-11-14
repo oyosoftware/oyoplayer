@@ -1,0 +1,421 @@
+<html>
+
+    <head>
+        <title>Test Player</title>
+        <script src="https://code.jquery.com/jquery-3.4.0.js"></script>
+        <script src="oyoplayer.js"></script>
+        <script src="../oyobuttons/oyobuttons.js"></script>
+        <script src="../oyoslider/oyoslider.js"></script>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            .oyoplayer {
+                visibility: hidden;
+            }
+            .oyoplayer2 {
+                width: 500px;
+                border-radius: 16px;
+                box-shadow: 8px 8px 16px black;
+                overflow: hidden;
+                background-color: black;
+                padding: 8px;
+                user-select: none;
+                outline: none;
+                position: relative;
+                top: -88px;
+            }
+            .oyopanel {
+                display: inline-block;
+                width: 484px;
+                background-color: black;
+                overflow: hidden;
+                border-radius: 16px;
+            }
+            .oyoplaycontrol {
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .oyotimedisplay {
+                display: inline-block;
+                color: white;
+                margin: 6px;
+                text-align: center;
+                vertical-align: middle;
+            }
+            .oyotrackslider {
+                display: inline-block;
+                vertical-align: middle;
+                outline: none;
+            }
+            .oyovolumecontrol {
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .oyovolumeslider {
+                display: inline-block;
+                vertical-align: middle;
+                outline: none;
+            }
+            .oyospeaker {
+                vertical-align: middle;
+                margin-left: 6px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <script>
+
+            $(document).ready(function () {
+
+                makeAudio();
+                makeNewAudio();
+                $(audio).trigger("volumechange");
+
+                //audioPlayer.addToPlaylist("Piano And String Quartet.mp3", "Piano And String Quartet");
+                audioPlayer.addToPlaylist("The Step.mp3", "!!! - The Step");
+                audioPlayer.addToPlaylist("Drop Shot.mp3", "TaxiWars - Drop Shot");
+                audioPlayer.addToPlaylist("How To Disappear Completely.mp3", "Radiohead - How To Disappear Completely");
+                //audioPlayer.addToPlaylist("https://stream.player.arrow.nl/arrow", "Arrow Classic Rock");
+                audioPlayer.setSourceIndex(1);
+                audioPlayer.setNotification("Push Play to start");
+                //audioPlayer.state.playall = false;
+                //audioPlayer.state.samples = true;
+
+                function makeAudio() {
+                    audioPlayer = new oyoPlayer();
+                    $("body").append(audioPlayer);
+
+                    audio = audioPlayer.audio;
+
+                    $(audio).on("loadedmetadata", loadedMetaData);
+                    $(audio).on("playing", playing);
+                    $(audio).on("pause", paused);
+                    $(audio).on("ended", ended);
+                    $(audio).on("volumechange", volumeChange);
+                    $(audio).on("timeupdate", timeUpdate);
+
+                    function loadedMetaData() {
+                        playpause.enable();
+                        speaker.enable();
+                        initPrevNext();
+                        trackSlider.disable();
+                        if (audioPlayer.track.duration !== Infinity) {
+                            trackSlider.enable();
+                        }
+                        $(tag).html($(".oyotag").html());
+                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
+                        $(tag).attr("style", $(".oyotag").attr("style"));
+                    }
+
+                    function playing() {
+                        if (playpause.state === 0) {
+                            playpause.changeState();
+                        }
+                        $(tag).html($(".oyotag").html());
+                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
+                        $(tag).attr("style", $(".oyotag").attr("style"));
+                    }
+
+                    function paused() {
+                        if (!audioPlayer.state.active) {
+                            if (playpause.state === 1) {
+                                playpause.changeState();
+                            }
+                        }
+                    }
+
+                    function ended() {
+                        if (!audioPlayer.state.active) {
+                            if (playpause.state === 1) {
+                                playpause.changeState();
+                            }
+                        }
+                        trackSlider.disable();
+                        trackSlider.reset();
+                    }
+
+                    function volumeChange() {
+                        if (((audio.muted || audio.volume === 0) && speaker.state === 0) ||
+                                ((!audio.muted && audio.volume !== 0) && speaker.state === 1)) {
+                            speaker.changeState();
+                        }
+                        var left = audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
+                        if (audio.muted) {
+                            left = -$(".oyothumb", volumeSlider).width() / 2;
+                        }
+                        $(".oyothumb", volumeSlider).css("left", left);
+                        var width = left + $(".oyothumb", volumeSlider).width() / 2;
+                        $(".oyotrackbefore", volumeSlider).width(width);
+                    }
+
+                    function timeUpdate() {
+                        var current = Math.floor(audioPlayer.track.currentTime - audioPlayer.track.start);
+                        if (!isNaN(audioPlayer.track.duration)) {
+                            var time = "";
+                            if (audioPlayer.track.duration !== Infinity) {
+                                var duration = Math.floor(audioPlayer.track.duration);
+                                time = formatTime(current, duration);
+                            } else {
+                                time = formatTime(current);
+                            }
+                        }
+                        var prevtime = $(timeDisplay).html();
+                        if (time !== prevtime) {
+                            $(timeDisplay).html(time);
+                            changeTrackSlider();
+                        }
+                    }
+                }
+
+                function makeNewAudio() {
+
+                    player2 = document.createElement("div");
+                    $(player2).addClass("oyoplayer2");
+                    $(player2).attr("tabindex", 0);
+                    //$("body").append(player2);
+
+                    panel = document.createElement("div");
+                    $(panel).addClass("oyopanel");
+                    $(player2).append(panel);
+
+                    playControl = document.createElement("div");
+                    $(playControl).addClass("oyoplaycontrol");
+                    $(panel).append(playControl);
+
+                    playpause = new oyoButton("playpause");
+                    playpause.scale(0.5);
+                    $(playControl).append(playpause);
+                    playpause.disable();
+
+                    previous = new oyoButton("previous");
+                    previous.scale(0.5);
+                    $(playControl).append(previous);
+                    previous.disable();
+
+                    next = new oyoButton("next");
+                    next.scale(0.5);
+                    $(playControl).append(next);
+                    next.disable();
+
+                    timeDisplay = document.createElement("div");
+                    $(timeDisplay).addClass("oyotimedisplay");
+                    $(timeDisplay).html(formatTime(0, 0));
+                    $(panel).append(timeDisplay);
+
+                    trackSlider = new oyoSlider();
+                    $(trackSlider).addClass("oyotrackslider");
+                    trackSlider.change(100, 34);
+                    trackSlider.disable();
+                    trackSlider.setKeyControlElement(player2);
+                    $(panel).append(trackSlider);
+
+                    volumeControl = document.createElement("div");
+                    $(volumeControl).addClass("oyovolumecontrol");
+                    $(panel).append(volumeControl);
+
+                    volumeSlider = new oyoSlider();
+                    $(volumeSlider).addClass("oyovolumeslider");
+                    volumeSlider.change(64, 34);
+                    $(volumeSlider).css("display", "none");
+                    volumeSlider.setKeyControlElement(volumeControl);
+                    $(volumeControl).append(volumeSlider);
+
+                    speaker = new oyoButton("speaker");
+                    speaker.scale(0.5);
+                    $(volumeControl).append(speaker);
+                    speaker.disable();
+
+                    tagBox = document.createElement("div");
+                    $(tagBox).addClass("oyotagbox");
+                    $(player2).append(tagBox);
+
+                    tag = document.createElement("div");
+                    $(tag).addClass("oyotag");
+                    $(tagBox).append(tag);
+
+                    $("body").append(player2);
+
+                    $(player2).on("keydown", oyoPlayerKeyDown);
+                    $(playpause).on("click", oyoPlayPauseButtonClick);
+                    $(previous).on("click", oyoPreviousButtonClick);
+                    $(next).on("click", oyoNextButtonClick);
+                    $(speaker).on("click", oyoSpeakerButtonClick);
+                    $(volumeControl).on("mouseenter", oyoVolumeControlMouseEnter);
+                    $(volumeControl).on("mouseleave", oyoVolumeControlMouseLeave);
+                    $(document).on("mousemove", mouseMove);
+                    $(document).on("mouseup", mouseUp);
+                    $(document).on("click", click);
+                    $(tagBox).on("click", tagBoxClick);
+
+                    function oyoPlayerKeyDown() {
+                        changeCurrentTime();
+                    }
+
+                    function oyoPlayPauseButtonClick() {
+                        if (audioPlayer.track.duration === Infinity) {
+                            if (playpause.state === 1) {
+                                audio.load();
+                            }
+                        }
+                        audioPlayer.playPause(audioPlayer.getCurrentTrack());
+                    }
+
+                    function oyoPreviousButtonClick() {
+                        trackSlider.disable();
+                        var previous = audioPlayer.skipPrevious();
+                        if (previous && audioPlayer.state.active) {
+                            playpause.changeState();
+                        }
+                        initPrevNext();
+                    }
+
+                    function oyoNextButtonClick() {
+                        trackSlider.disable();
+                        var next = audioPlayer.skipNext();
+                        if (next && audioPlayer.state.active) {
+                            playpause.changeState();
+                        }
+                        initPrevNext();
+                    }
+
+                    function oyoSpeakerButtonClick() {
+                        audio.muted = !audio.muted;
+                    }
+
+                    function oyoVolumeControlMouseEnter() {
+                        if (!trackSlider.active) {
+                            $(volumeSlider).css("display", "inline-block");
+                            changeTrackSlider();
+                        }
+                    }
+
+                    function oyoVolumeControlMouseLeave() {
+                        if (!trackSlider.active) {
+                            $(volumeSlider).css("display", "none");
+                            changeTrackSlider();
+                        }
+                    }
+
+                    function mouseMove(event) {
+                        if (trackSlider.active) {
+                            changeCurrentTime();
+                        }
+                        if (volumeSlider.active) {
+                            changeVolume();
+                        }
+                    }
+
+                    function mouseUp(event) {
+                        var elements = $(volumeControl).add($(volumeControl).find("*")).toArray();
+                        if (elements.indexOf(event.target) === -1) {
+                            $(volumeSlider).css("display", "none");
+                            changeTrackSlider();
+                        }
+                    }
+
+                    function click(event) {
+                        var elements = $(trackSlider).add($(trackSlider).find("*")).toArray();
+                        if (elements.indexOf(event.target) !== -1) {
+                            changeCurrentTime();
+                        }
+                        var elements = $(volumeSlider).add($(volumeSlider).find("*")).toArray();
+                        if (elements.indexOf(event.target) !== -1) {
+                            changeVolume();
+                        }
+                    }
+
+                    function tagBoxClick() {
+                        if (audioPlayer.state.scroll) {
+                            audioPlayer.state.scroll = false;
+                        } else {
+                            audioPlayer.state.scroll = true;
+                        }
+                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
+                        $(tag).attr("style", $(".oyotag").attr("style"));
+                    }
+
+                }
+
+                function initPrevNext() {
+                    if (audioPlayer.getCurrentTrack() === 1 || !audioPlayer.state.playall) {
+                        previous.disable();
+                    } else {
+                        previous.enable();
+                    }
+                    if (audioPlayer.getCurrentTrack() === audioPlayer.countSongs() || !audioPlayer.state.playall) {
+                        next.disable();
+                    } else {
+                        next.enable();
+                    }
+                }
+
+                function formatTime(currentSeconds, durationSeconds) {
+                    var aHours, aMinutes, aSeconds;
+                    var cHours = Math.floor(currentSeconds / 3600);
+                    var cMinutes = Math.floor((currentSeconds - (cHours * 3600)) / 60);
+                    var cSeconds = currentSeconds - (cHours * 3600) - (cMinutes * 60);
+                    var dHours = Math.floor(durationSeconds / 3600);
+                    var dMinutes = Math.floor((durationSeconds - (dHours * 3600)) / 60);
+                    var dSeconds = durationSeconds - (dHours * 3600) - (dMinutes * 60);
+                    if (cHours > 0 || dHours > 0) {
+                        aHours = cHours + ":";
+                        aMinutes = cMinutes.toString().padStart(2, "0") + ":";
+                        aSeconds = cSeconds.toString().padStart(2, "0");
+                    } else {
+                        aHours = "";
+                        aMinutes = cMinutes + ":";
+                        aSeconds = cSeconds.toString().padStart(2, "0");
+                    }
+                    var time = aHours + aMinutes + aSeconds;
+                    if (durationSeconds !== undefined) {
+                        if (dHours > 0) {
+                            aHours = dHours + ":";
+                            aMinutes = dMinutes.toString().padStart(2, "0") + ":";
+                            aSeconds = dSeconds.toString().padStart(2, "0");
+                        } else {
+                            aHours = "";
+                            aMinutes = dMinutes + ":";
+                            aSeconds = dSeconds.toString().padStart(2, "0");
+                        }
+                        var durationTime = aHours + aMinutes + aSeconds;
+                        time += "/" + durationTime;
+                    }
+                    return time;
+                }
+
+                function changeCurrentTime() {
+                    if (audioPlayer.track.duration !== Infinity) {
+                        var currentTime = audioPlayer.track.start;
+                        var percentage = trackSlider.value / trackSlider.max;
+                        currentTime += percentage * audioPlayer.track.duration;
+                        audioPlayer.track.currentTime = currentTime;
+                    }
+                }
+
+                function changeVolume() {
+                    var percentage = $(".oyotrackbefore", volumeSlider).width() / $(".oyotrackafter", volumeSlider).width();
+                    if (percentage > 0) {
+                        audio.muted = false;
+                    }
+                    audio.volume = percentage;
+                }
+
+                function changeTrackSlider() {
+                    var panelWidth = $(panel).width();
+                    var playControlWidth = $(playControl).outerWidth(true);
+                    var timeDisplayWidth = $(timeDisplay).outerWidth(true);
+                    var volumeControlWidth = $(volumeControl).outerWidth(true);
+                    var width = panelWidth - (playControlWidth + timeDisplayWidth + volumeControlWidth);
+                    trackSlider.change(width);
+                    if (audioPlayer.track.duration !== Infinity) {
+                        var value = parseFloat((100 * (audioPlayer.track.currentTime - audioPlayer.track.start) / audioPlayer.track.duration).toFixed(6));
+                        trackSlider.value = value;
+                    }
+                }
+
+            });</script>
+
+    </body>
+</html>
