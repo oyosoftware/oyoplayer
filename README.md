@@ -3,11 +3,11 @@
   <img src="http://oyoweb.nl/music/plugins/oyoplayer/oyoplayer1.jpg" alt="oyobuttons">
 </a>
 <p>Audio Player</p>
-<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;currency_code=EUR&amp;business=info@oyoweb.nl&amp;item_name=donation%20for%20oyoplayer" rel="nofollow">
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;currency_code=EUR&amp;business=code@oyosoftware.nl&amp;item_name=donation%20for%20oyoplayer" rel="nofollow">
   <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" alt="Donate via PayPal" style="max-width: 100%;vertical-align: top">
 </a>
 <div>
-<p style="max-width: 100%;vertical-align: middle">Please consider supporting me by making a donation via <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;currency_code=EUR&amp;business=info@oyoweb.nl&amp;item_name=donation%20for%20oyoplayer" rel="nofollow">PayPal</a>.</p>
+<p style="max-width: 100%;vertical-align: middle">Please consider supporting me by making a donation via <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;currency_code=EUR&amp;business=code@oyosoftware.nl&amp;item_name=donation%20for%20oyoplayer" rel="nofollow">PayPal</a>.</p>
 <p>In this way I can keep working for you.</p>
 <p>Suggestions and comments are welcome.</p>
 </div>
