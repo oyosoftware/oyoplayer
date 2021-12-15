@@ -10,7 +10,7 @@
  * it also can play samples and has a marquee
  */
 
-////import {oyoButton} from "./oyobuttons/oyobuttons";
+//import {oyoButton} from "../oyobuttons/oyobuttons";
 //export {oyoPlayer};
 
 var oyoPlayerLocation;
@@ -34,9 +34,7 @@ function oyoPlayer() {
     var style;
 
     var active = false;
-    var played;
     var stateSeeked = false;
-    var userPaused = false;
     var playall = true;
     var samples = false;
     var scroll = true;
@@ -138,7 +136,6 @@ function oyoPlayer() {
         function playing() {
             notification = "";
             active = true;
-            played = player.audio.played.length;
             player.changeTag(tags[counter]);
         }
 
@@ -178,21 +175,17 @@ function oyoPlayer() {
             }
         }
 
-        function paused(event) {
+        function paused() {
             stateSeeked = false;
-            userPaused = false;
             setTimeout(function () {
                 if (!stateSeeked) {
-                    userPaused = true;
+                    active = false;
                 }
             }, 200);
         }
 
-        function seek(event) {
+        function seek() {
             stateSeeked = true;
-            if (player.audio.currentTime > 0 && userPaused) {
-                active = false;
-            }
         }
 
         function ended() {
@@ -354,9 +347,9 @@ function oyoPlayer() {
     };
 
     player.playPause = function (index) {
-        active = true;
         if (songs[index] !== currentSong) {
             if (songs[index] !== undefined) {
+                active = true;
                 counter = index;
                 player.changeSource(songs[counter]);
             } else {

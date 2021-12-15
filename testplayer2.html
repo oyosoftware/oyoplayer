@@ -6,6 +6,7 @@
         <script src="oyoplayer.js"></script>
         <script src="../oyobuttons/oyobuttons.js"></script>
         <script src="../oyoslider/oyoslider.js"></script>
+        <script src="../oyomarquee/oyomarquee.js"></script>
         <style>
             * {
                 box-sizing: border-box;
@@ -104,18 +105,16 @@
                         if (audioPlayer.track.duration !== Infinity) {
                             trackSlider.enable();
                         }
-                        $(tag).html($(".oyotag").html());
-                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
-                        $(tag).attr("style", $(".oyotag").attr("style"));
+                        tagBox.setText($(".oyotag").html());
                     }
 
                     function playing() {
                         if (playpause.state === 0) {
                             playpause.changeState();
                         }
-                        $(tag).html($(".oyotag").html());
-                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
-                        $(tag).attr("style", $(".oyotag").attr("style"));
+                        if ($(".oyomarqueebanner").html() !== $(".oyotag").html()) {
+                            tagBox.setText($(".oyotag").html());
+                        }
                     }
 
                     function paused() {
@@ -227,13 +226,10 @@
                     $(volumeControl).append(speaker);
                     speaker.disable();
 
-                    tagBox = document.createElement("div");
-                    $(tagBox).addClass("oyotagbox");
+                    tagBox = new oyoMarquee(484, 15.325, 8);
+                    tagBox.changeBackgroundColor("black");
+                    tagBox.changeTextColor("white");
                     $(player2).append(tagBox);
-
-                    tag = document.createElement("div");
-                    $(tag).addClass("oyotag");
-                    $(tagBox).append(tag);
 
                     $("body").append(player2);
 
@@ -332,8 +328,6 @@
                         } else {
                             audioPlayer.state.scroll = true;
                         }
-                        $(tagBox).attr("style", $(".oyotagbox").attr("style"));
-                        $(tag).attr("style", $(".oyotag").attr("style"));
                     }
 
                 }
