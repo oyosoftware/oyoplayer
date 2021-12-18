@@ -180,7 +180,6 @@ function oyoPlayer() {
             stateSeeked = false;
             stateEnded = false;
             setTimeout(function () {
-                console.log(stateEnded);
                 if (!stateSeeked && !stateEnded) {
                     active = false;
                 }
