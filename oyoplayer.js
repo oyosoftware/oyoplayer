@@ -35,6 +35,7 @@ function oyoPlayer() {
 
     var active = false;
     var stateSeeked = false;
+    var stateEnded = false;
     var playall = true;
     var samples = false;
     var scroll = true;
@@ -177,8 +178,10 @@ function oyoPlayer() {
 
         function paused() {
             stateSeeked = false;
+            stateEnded = false;
             setTimeout(function () {
-                if (!stateSeeked) {
+                console.log(stateEnded);
+                if (!stateSeeked && !stateEnded) {
                     active = false;
                 }
             }, 200);
@@ -189,6 +192,7 @@ function oyoPlayer() {
         }
 
         function ended() {
+            stateEnded = true;
             if (trackDuration !== Infinity) {
                 player.audio.src = "";
                 player.skipNext();
