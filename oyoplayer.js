@@ -10,20 +10,8 @@
  * it also can play samples and has a marquee
  */
 
-//import {oyoButton} from "../oyobuttons/oyobuttons";
-//export {oyoPlayer};
-
-var oyoPlayerLocation;
-
-(function () {
-    var src = $("script").last().attr("src");
-    oyoPlayerLocation = src.substring(0, src.lastIndexOf("/") + 1);
-    var link = document.createElement("link");
-    $(link).attr("rel", "stylesheet");
-    var href = src.substring(0, src.length - 3) + ".css";
-    $(link).attr("href", href);
-    $("head").append(link);
-})();
+var src = $("script").last().attr("src");
+var oyoPlayerLocation = src.substring(0, src.lastIndexOf("/") + 1);
 
 function oyoPlayer() {
 
