@@ -6,15 +6,24 @@ $filename = "" . $_GET['source'];
 
 $pos = mb_strrpos($filename, "/");
 $target = mb_substr($filename, 0, $pos);
-$link = "audio";
-if (file_exists($link)) {
-    rmdir($link);
-    unlink($link);
+$symlink = "#a";
+for ($i = 0; $i < 4; $i++) {
+    $random = rand(0, 15);
+    if ($random < 10) {
+        $symlink .= $random;
+    } else {
+        $symlink .= chr(96 + $random - 9);
+    }
 }
-symlink($target, $link);
-$filename = $link . mb_substr($filename, $pos);
+if (file_exists($symlink)) {
+    rmdir($symlink);
+    unlink($symlink);
+}
+symlink($target, $symlink);
+$filename = $symlink . mb_substr($filename, $pos);
 
 readfile($filename);
-rmdir($link);
-unlink($link);
+
+rmdir($symlink);
+unlink($symlink);
 ?>

@@ -117,6 +117,7 @@ function oyoPlayer() {
         }
 
         function canPlay() {
+            //if (active && player.audio.currentTime === trackStart) {
             if (active && player.audio.currentTime === 0) {
                 player.audio.play();
             }
