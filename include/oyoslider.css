@@ -1,0 +1,39 @@
+.oyoslider {
+    background-color: black;
+    border-radius: 6px;
+}
+.oyotrack {
+    box-sizing: content-box !important;
+    position: relative;
+    margin: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 0px;
+    border-radius: 2px;
+}
+.oyothumb {
+    z-index: 2;
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: white;
+    border-radius: 6px;
+    display: none;
+}
+.oyotrackrange {
+    position: absolute;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.oyotrackbefore {
+    z-index: 1;
+    position: absolute;
+    background-color: #527FC3;
+    border-radius: 2px;
+}
+.oyotrackafter {
+    position: absolute;
+    background-color: #B3CEB3;
+    border-radius: 2px;
+}
