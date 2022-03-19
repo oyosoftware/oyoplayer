@@ -37,5 +37,5 @@
 </ul>
 <h2>Contact</h2>
 <ul>
-<li>oyosoftware <a href="mailto:code@oyosoftware.nl">software@oyoweb.nl</a></li>
+<li>oyosoftware <a href="mailto:code@oyosoftware.nl">code@oyosoftware.nl</a></li>
 </ul>
