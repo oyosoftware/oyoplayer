@@ -47,15 +47,10 @@ function oyoPlayer() {
     var maxSampleLength = 60;
 
     (function oyoPlayer() {
-        if (window.oyoPlayerCount === undefined) {
-            oyoPlayerCount = 1;
-        } else {
-            oyoPlayerCount += 1;
-        }
+        playerIndex = $("[class^='oyoplayer']").length + 1;
 
         player = document.createElement("div");
         $(player).attr("class", "oyoplayer");
-        playerIndex = oyoPlayerCount;
 
         player.audio = document.createElement("audio");
         $(player.audio).attr("class", "oyoaudio");
@@ -129,7 +124,8 @@ function oyoPlayer() {
         }
 
         function timeUpdate(event) {
-            // conditions scrobbling LastFM: song is longer than 30 seconds, song has played half it's duration or 240 seconds
+            // conditions scrobbling LastFM: song is longer than 30 seconds,
+            // song has played half it's duration or 240 seconds
             if (player.audio.duration !== Infinity && player.audio.duration > 30 && !scrobbled) {
                 var secondsPlayed = 0;
                 for (var i = 0; i < player.audio.played.length; i++) {
