@@ -14,18 +14,18 @@
     overflow                    : hidden;
 }
 audio {
-    font-size                   : 53.33px;
+    font-size					: 53.33px;
     font-weight                 : 900;
-    outline-style		: none;
-    width			: 484px;
-    height			: 40px;
-    background-color		: black;
+    outline-style				: none;
+    width						: 484px;
+    height						: 40px;
+    background-color			: black;
 }
 audio::-webkit-media-controls {
     overflow                    : hidden !important;
 }
 audio::-webkit-media-controls-enclosure {
-    background-color		: black;
+    background-color			: black;
     width                       : calc(100% + 44px);
     margin-left                 : auto;
     border-radius               : 0px;
@@ -36,18 +36,18 @@ audio::-webkit-media-controls-play-button,
 audio::-webkit-media-controls-mute-button,
 audio::-webkit-media-controls-timeline,
 audio::-webkit-media-controls-volume-slider {
-    filter			: invert(100%);
+    filter						: invert(100%);
 }
 .oyotagbox {
     overflow                    : hidden;
-    border-radius		: 8px;
+    border-radius				: 8px;
     margin                      : 8px 0px 0px;
     box-sizing                  : border-box;
 }
 .oyotag {
     display                     : inline-block;
-    color			: white;
-    white-space			: nowrap;
+    color						: white;
+    white-space					: nowrap;
     box-sizing                  : border-box;
     font-size                   : 13.33px;
     font-weight                 : 700;

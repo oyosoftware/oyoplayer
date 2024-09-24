@@ -6,9 +6,7 @@
         <script src="oyoplayer.js"></script>
         <link rel="stylesheet" href="oyoplayer.css">
         <script src="include/oyobuttons.js"></script>
-        <link rel="stylesheet" href="include/oyobuttons.css">
         <script src="include/oyoslider.js"></script>
-        <link rel="stylesheet" href="include/oyoslider.css">
         <script src="include/oyomarquee.js"></script>
         <style>
             * {
@@ -140,7 +138,7 @@
 
                     function volumeChange() {
                         if (((audio.muted || audio.volume === 0) && speaker.state === 0) ||
-                                ((!audio.muted && audio.volume !== 0) && speaker.state === 1)) {
+                            ((!audio.muted && audio.volume !== 0) && speaker.state === 1)) {
                             speaker.changeState();
                         }
                         var left = audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
