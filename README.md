@@ -15,7 +15,7 @@
   <li><strong>category</strong> multimedia</li>
   <li><strong>copyright</strong> 2015-2021 oyosoftware </li>
   <li><strong>license</strong> MIT License</li>
-  <li><strong>link</strong> http://www.oyosoftware.nl/plugins/oyoplayer/testplayer1.html</li>
+  <li><strong>link</strong> http://www.oyosoftware.nl/plugins/oyoplayer/testplayer.html</li>
   <li><strong>source</strong> https://github.com/oyosoftware/oyoplayer</li>
 </ul>
 <h2>Description</h2>
