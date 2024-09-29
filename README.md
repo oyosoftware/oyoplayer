@@ -1,6 +1,6 @@
 # oyoplayer
 <a href="http://oyosoftware.nl/plugins/oyoplayer/testplayer.html" target="_blank">
-  <img src="http://oyosoftware.nl/plugins/oyoplayer/oyoplayer1.jpg" alt="oyobuttons">
+  <img src="http://oyosoftware.nl/plugins/oyoplayer/oyoplayer.jpg" alt="oyobuttons">
 </a>
 <p>Audio Player</p>
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;currency_code=EUR&amp;business=code@oyosoftware.nl&amp;item_name=donation%20for%20oyoplayer" rel="nofollow">
