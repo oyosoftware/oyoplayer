@@ -34,6 +34,7 @@
   <li>First notification in the marquee before playing can be set.</li>
   <li>Has play/pause function.</li>
   <li>Has skip functions for previous and next.</li>
+  <li>Now has a whole new interface, also with previous and next buttons.</li>
 </ul>
 <h2>Contact</h2>
 <ul>
