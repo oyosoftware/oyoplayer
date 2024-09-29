@@ -1,9 +1,9 @@
 /*!
- * oyoplayer.js 2.0
+ * oyoplayer.js 3.0
  * tested with jQuery 3.4.0
  * http://www.oyoweb.nl
  *
- * © 2015-2021 oYoSoftware
+ * © 2015-2024 oYoSoftware
  * MIT License
  *
  * oyoplayer is an alternative audio player with a playlist
@@ -15,20 +15,14 @@ var oyoPlayerLocation = src.substring(0, src.lastIndexOf("/") + 1);
 
 function oyoPlayer() {
 
-    var player;
-    var playerIndex;
-    var tagBox;
-    var tag;
-    var style;
-
     var active = false;
-    var stateSeeked = false;
-    var stateEnded = false;
     var playall = true;
     var samples = false;
     var scroll = true;
     var scrobbled = false;
     var notification = "";
+    var defaultBackgroundColor = "black";
+    var defaultTextColor = "white";
 
     var counter = 1;
     var currentSong = "";
@@ -46,218 +40,292 @@ function oyoPlayer() {
     var minSampleLength = 30;
     var maxSampleLength = 60;
 
-    (function oyoPlayer() {
-        playerIndex = $("[class^='oyoplayer']").length + 1;
+    var buttons = document.createElement("script");
+    $(buttons).attr("src", oyoPlayerLocation + "oyobuttons.js");
+    $("head").append(buttons);
+    var slider = document.createElement("script");
+    $(slider).attr("src", oyoPlayerLocation + "oyoslider.js");
+    $("head").append(slider);
+    var marquee = document.createElement("script");
+    $(marquee).attr("src", oyoPlayerLocation + "oyomarquee.js");
+    $("head").append(marquee);
 
-        player = document.createElement("div");
-        $(player).attr("class", "oyoplayer");
+    var player = document.createElement("div");
+    $(player).attr("class", "oyoplayer");
+    $(player).css("box-sizing", "border-box");
+    $(player).css("width", "500px");
+    $(player).css("border-radius", "16px");
+    $(player).css("box-shadow", "8px 8px 16px black");
+    $(player).css("overflow", "hidden");
+    $(player).css("background-color", defaultBackgroundColor);
+    $(player).css("padding", "8px");
+    $(player).css("user-select", "none");
+    $(player).css("outline", "none");
 
-        player.audio = document.createElement("audio");
-        $(player.audio).attr("class", "oyoaudio");
-        $(player.audio).attr("controls", "controls");
-        $(player.audio).attr("controlslist", "nodownload");
-        $(player.audio).attr("preload", "auto");
-        $(player).append(player.audio);
+    player.audio = document.createElement("audio");
+    $(player.audio).attr("class", "oyoaudio");
+    $(player.audio).attr("preload", "auto");
+    $(player).append(player.audio);
 
-        tagBox = document.createElement("div");
-        $(tagBox).attr("class", "oyotagbox");
-        $(player).append(tagBox);
+    var panel = document.createElement("div");
+    $(panel).attr("class", "oyopanel");
+    $(panel).css("display", "inline-block");
+    $(panel).css("width", "484px");
+    $(panel).css("background-color", defaultBackgroundColor);
+    $(panel).css("overflow", "hidden");
+    $(panel).css("border-radius", "16px");
+    $(player).append(panel);
 
-        tag = document.createElement("div");
-        $(tag).attr("class", "oyotag");
-        $(tagBox).append(tag);
+    var playControl = document.createElement("div");
+    $(playControl).attr("class", "oyoplaycontrol");
+    $(playControl).css("display", "inline-block");
+    $(playControl).css("vertical-align", "middle");
+    $(panel).append(playControl);
 
-        $(player.audio).on("loadedmetadata", loadedMetaData);
-        $(player.audio).on("canplay", canPlay);
-        $(player.audio).on("playing", playing);
-        $(player.audio).on("timeupdate", timeUpdate);
-        $(player.audio).on("pause", paused);
-        $(player.audio).on("seeking", seek);
-        $(player.audio).on("seeked", seek);
-        $(player.audio).on("ended", ended);
-        $(player.audio).on("error", error);
+    var playpause = new oyoButton("playpause");
+    playpause.scale(0.5);
+    playpause.disable();
+    $(playControl).append(playpause);
 
-        function loadedMetaData() {
-            scrobbled = false;
-            if (!player.state.active && notification !== "") {
-                player.changeTag(notification);
-            } else {
-                player.changeTag(tags[counter]);
-            }
-            switch (true) {
-                case !samples && player.audio.duration !== Infinity:
-                    trackStart = 0;
-                    trackEnd = player.audio.duration;
-                    trackDuration = player.audio.duration;
-                    break;
-                case samples && player.audio.duration !== Infinity:
-                    trackStart = Math.round(100 * (sampleLimitBegin / 100) * player.audio.duration) / 100;
-                    trackEnd = Math.round(100 * (sampleLimitEnd / 100 * player.audio.duration)) / 100;
-                    trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
-                    if (trackDuration < minSampleLength)
-                        trackEnd = trackStart + minSampleLength;
-                    if (trackDuration > maxSampleLength)
-                        trackEnd = trackStart + maxSampleLength;
-                    if (trackEnd > player.audio.duration)
-                        trackEnd = Math.round(100 * ((100 - sampleLimitBegin) / 100 * player.audio.duration)) / 100;
-                    trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
-                    break;
-                case player.audio.duration === Infinity:
-                    trackStart = 0;
-                    trackEnd = player.audio.duration;
-                    trackDuration = player.audio.duration;
-                    break;
-            }
-            player.audio.currentTime = trackStart;
-        }
+    var previous = new oyoButton("previous");
+    previous.scale(0.5);
+    previous.disable();
+    $(playControl).append(previous);
 
-        function canPlay() {
-            if (active && player.audio.currentTime === trackStart) {
-                player.audio.play();
-            }
-        }
+    var next = new oyoButton("next");
+    next.scale(0.5);
+    next.disable();
+    $(playControl).append(next);
 
-        function playing() {
+    var timeDisplay = document.createElement("div");
+    $(timeDisplay).addClass("oyotimedisplay");
+    $(timeDisplay).css("display", "inline-block");
+    $(timeDisplay).css("color", defaultTextColor);
+    $(timeDisplay).css("margin", "6px");
+    $(timeDisplay).css("text-align", "center");
+    $(timeDisplay).css("vertical-align", "middle");
+    $(timeDisplay).html(formatTime(0, 0));
+    $(panel).append(timeDisplay);
+
+    var trackSlider = new oyoSlider();
+    $(trackSlider).addClass("oyotrackslider");
+    $(trackSlider).css("display", "inline-block");
+    $(trackSlider).css("vertical-align", "middle");
+    $(trackSlider).css("outline", "none");
+    trackSlider.change(100, 34);
+    trackSlider.disable();
+    trackSlider.setKeyControlElement(player);
+    $(panel).append(trackSlider);
+
+    var volumeControl = document.createElement("div");
+    $(volumeControl).addClass("oyovolumecontrol");
+    $(volumeControl).css("display", "inline-block");
+    $(volumeControl).css("vertical-align", "middle");
+    $(panel).append(volumeControl);
+
+    var volumeSlider = new oyoSlider();
+    $(volumeSlider).addClass("oyovolumeslider");
+    $(volumeSlider).css("display", "inline-block");
+    $(volumeSlider).css("vertical-align", "middle");
+    $(volumeSlider).css("outline", "none");
+    volumeSlider.change(64, 34);
+    $(volumeSlider).css("display", "none");
+    volumeSlider.setKeyControlElement(volumeControl);
+    volumeSlider.disable();
+    $(volumeControl).append(volumeSlider);
+
+    var speaker = new oyoButton("speaker");
+    $(speaker).css("vertical-align", "middle");
+    speaker.scale(0.5);
+    speaker.disable();
+    $(volumeControl).append(speaker);
+
+    var tagBox = new oyoMarquee(484, 25, 8);
+    tagBox.changeBackgroundColor(defaultBackgroundColor);
+    tagBox.changeTextColor(defaultTextColor);
+    $(player).append(tagBox);
+
+    $(player.audio).on("loadedmetadata", loadedMetaData);
+    $(player.audio).on("canplay", canPlay);
+    $(player.audio).on("playing", playing);
+    $(player.audio).on("timeupdate", timeUpdate);
+    $(player.audio).on("pause", paused);
+    $(player.audio).on("ended", ended);
+    $(player.audio).on("error", error);
+    $(player.audio).on("volumechange", volumeChange);
+
+    function loadedMetaData() {
+        scrobbled = false;
+        if (!active && notification !== "") {
+            player.changeTag(notification);
             notification = "";
-            active = true;
+        } else {
             player.changeTag(tags[counter]);
         }
+        switch (true) {
+            case !samples && player.audio.duration !== Infinity:
+                trackStart = 0;
+                trackEnd = player.audio.duration;
+                trackDuration = player.audio.duration;
+                break;
+            case samples && player.audio.duration !== Infinity:
+                trackStart = Math.round(100 * (sampleLimitBegin / 100) * player.audio.duration) / 100;
+                trackEnd = Math.round(100 * (sampleLimitEnd / 100 * player.audio.duration)) / 100;
+                trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
+                if (trackDuration < minSampleLength)
+                    trackEnd = trackStart + minSampleLength;
+                if (trackDuration > maxSampleLength)
+                    trackEnd = trackStart + maxSampleLength;
+                if (trackEnd > player.audio.duration)
+                    trackEnd = Math.round(100 * ((100 - sampleLimitBegin) / 100 * player.audio.duration)) / 100;
+                trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
+                break;
+            case player.audio.duration === Infinity:
+                trackStart = 0;
+                trackEnd = player.audio.duration;
+                trackDuration = player.audio.duration;
+                break;
+        }
+        player.audio.currentTime = trackStart;
 
-        function timeUpdate(event) {
-            // conditions scrobbling LastFM: song is longer than 30 seconds,
-            // song has played half it's duration or 240 seconds
-            if (player.audio.duration !== Infinity && player.audio.duration > 30 && !scrobbled) {
-                var secondsPlayed = 0;
-                for (var i = 0; i < player.audio.played.length; i++) {
-                    secondsPlayed += player.audio.played.end(i) - player.audio.played.start(i);
-                }
-                if (secondsPlayed / player.audio.duration > 0.5 || secondsPlayed > 240)
-                    scrobbled = true;
+        playpause.enable();
+        volumeSlider.enable();
+        speaker.enable();
+        initPrevNext();
+        trackSlider.reset();
+        if (player.track.duration !== Infinity) {
+            trackSlider.enable();
+        } else {
+            trackSlider.disable();
+        }
+    }
+
+    function canPlay() {
+        if (active && player.audio.currentTime === trackStart) {
+            player.audio.play();
+        }
+    }
+
+    function playing() {
+        player.changeTag(tags[counter]);
+
+        if (playpause.state === 0) {
+            playpause.changeState();
+        }
+    }
+
+    function timeUpdate(event) {
+        // conditions scrobbling LastFM: song is longer than 30 seconds,
+        // song has played half it's duration or 240 seconds
+        if (player.audio.duration !== Infinity && player.audio.duration > 30 && !scrobbled) {
+            var secondsPlayed = 0;
+            for (var i = 0; i < player.audio.played.length; i++) {
+                secondsPlayed += player.audio.played.end(i) - player.audio.played.start(i);
             }
+            if (secondsPlayed / player.audio.duration > 0.5 || secondsPlayed > 240)
+                scrobbled = true;
+        }
 
-            trackCurrentTime = player.audio.currentTime;
-            switch (true) {
-                case !samples && player.audio.duration !== Infinity:
-                    if (player.audio.duration > trackDuration) {
-                        trackDuration = player.audio.duration;
+        trackCurrentTime = player.audio.currentTime;
+        switch (true) {
+            case !samples && player.audio.duration !== Infinity:
+                if (player.audio.duration > trackDuration) {
+                    trackDuration = player.audio.duration;
+                }
+                if (player.audio.duration > 0 && player.audio.currentTime >= player.audio.duration) {
+                    if (!player.audio.ended) {
+                        $(player.audio).trigger("ended");
                     }
-                    if (player.audio.duration > 0 && player.audio.currentTime >= player.audio.duration) {
-                        if (!player.audio.ended) {
-                            $(player.audio).trigger("ended");
-                        }
-                    }
-                    break;
-                case samples && player.audio.duration !== Infinity:
-                    if (player.audio.currentTime < trackStart) {
-                        player.audio.currentTime = trackStart;
-                    }
-                    if (player.audio.currentTime > trackEnd) {
+                }
+                break;
+            case samples && player.audio.duration !== Infinity:
+                if (player.audio.currentTime < trackStart) {
+                    player.audio.currentTime = trackStart;
+                }
+                if (player.audio.currentTime > trackEnd) {
+                    if (playall) {
                         player.skipNext();
+                    } else {
+                        active = false;
+                        player.audio.currentTime = trackStart;
+                        player.audio.pause();
                     }
-                    break;
-                case player.audio.duration === Infinity:
-                    break;
+                }
+                break;
+            case player.audio.duration === Infinity:
+                break;
+        }
+
+        var current = Math.floor(player.track.currentTime - player.track.start);
+        if (!isNaN(player.track.duration)) {
+            var time = "";
+            if (player.track.duration !== Infinity) {
+                var duration = Math.floor(player.track.duration);
+                time = formatTime(current, duration);
+            } else {
+                time = formatTime(current);
             }
         }
-
-        function paused() {
-            stateSeeked = false;
-            stateEnded = false;
-            setTimeout(function () {
-                if (!stateSeeked && !stateEnded) {
-                    active = false;
-                }
-            }, 200);
+        var prevtime = $(timeDisplay).html();
+        if (time !== prevtime) {
+            $(timeDisplay).html(time);
+            changeTrackSlider();
         }
+    }
 
-        function seek() {
-            stateSeeked = true;
+    function paused() {
+        if (!active) {
+            if (playpause.state === 1) {
+                playpause.changeState();
+            }
         }
+    }
 
-        function ended() {
-            stateEnded = true;
-            if (trackDuration !== Infinity) {
-                $(player.audio).attr("src", "");
+    function ended() {
+        if (trackDuration !== Infinity) {
+            if (playall) {
                 player.skipNext();
             } else {
-                player.audio.load();
-                player.audio.play();
+                active = false;
+                player.audio.currentTime = trackStart;
             }
-        }
-
-        function error() {
-            errors[counter] = true;
-            var errorcount = 0;
-            for (var i = 1; i < errors.length; i++) {
-                if (errors[i] === true) {
-                    errorcount += 1;
-                }
-            }
-            if (errorcount < songs.length - 1) {
-                player.skipNext();
-            }
-        }
-
-        $(tagBox).on("click", tagBoxClick);
-
-        function tagBoxClick() {
-            scroll = !scroll;
-            initScroll();
-        }
-
-        var stylename = "style[name=keyframes]";
-        if ($(stylename).length === 0) {
-            style = document.createElement('style');
-            $(style).attr("name", "keyframes");
-            $("head").append(style);
-        }
-        style = $(stylename).get(0);
-
-        initScroll();
-    })();
-
-    function initScroll() {
-        var tagBoxWidth = $(tagBox).outerWidth();
-        var tagWidth = $(tag).width();
-        var centerPosition = (tagBoxWidth - tagWidth) / 2;
-        $(tag).css("left", centerPosition);
-
-        if (scroll) {
-            var keyframes = "@keyframes keyframes" + playerIndex + " { \n  " +
-                "0% { left: " + centerPosition + "px; }\n  " +
-                "50% { left: " + -1 * tagWidth + "px; }\n  " +
-                "50.001% { left: " + tagBoxWidth + "px; }\n  " +
-                "100% { left: " + centerPosition + "px; }\n" +
-                "}";
-            var rules = style.sheet.rules;
-            var index = playerIndex - 1;
-            if (rules[index]) {
-                style.sheet.deleteRule(index);
-                rules = style.sheet.rules;
-            }
-            var keyFrameRules = [];
-            $(rules).each(function (index, rule) {
-                keyFrameRules.push(rule.cssText);
-            });
-            keyFrameRules.push(keyframes);
-            keyFrameRules.sort();
-            $(style).html(keyFrameRules);
-        }
-
-        if (scroll) {
-            $(tag).css("animation", "linear infinite");
-            $(tag).css("animation-name", "keyframes" + playerIndex);
-            $(tag).css("animation-delay", "1s");
-            $(tag).css("animation-play-state", "running");
-            $(tagBox).css("text-align", "initial");
-            $(tag).css("position", "relative");
-            var duration = (tagBoxWidth + tagWidth) / 100 + "s";
-            $(tag).css("animation-duration", duration);
         } else {
-            $(tag).css("animation-play-state", "paused");
-            $(tagBox).css("text-align", "center");
-            $(tag).css("position", "static");
+            player.audio.load();
+            player.audio.play();
         }
+
+        if (!active) {
+            if (playpause.state === 1) {
+                playpause.changeState();
+            }
+        }
+    }
+
+    function error() {
+        errors[counter] = true;
+        var errorcount = 0;
+        for (var i = 1; i < errors.length; i++) {
+            if (errors[i] === true) {
+                errorcount += 1;
+            }
+        }
+        if (errorcount < songs.length - 1) {
+            player.skipNext();
+        }
+    }
+
+    function volumeChange() {
+        if (((player.audio.muted || player.audio.volume === 0) && speaker.state === 0) ||
+            ((!player.audio.muted && player.audio.volume !== 0) && speaker.state === 1)) {
+            speaker.changeState();
+        }
+        var left = player.audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
+        if (player.audio.muted) {
+            left = -$(".oyothumb", volumeSlider).width() / 2;
+        }
+        $(".oyothumb", volumeSlider).css("left", left);
+        var width = left + $(".oyothumb", volumeSlider).width() / 2;
+        $(".oyotrackbefore", volumeSlider).width(width);
     }
 
     player.track = {
@@ -306,10 +374,8 @@ function oyoPlayer() {
             return scroll;
         },
         set scroll(value) {
-            if (value !== false)
-                value = true;
             scroll = value;
-            initScroll();
+            tagBox.scroll = scroll;
         },
         get scrobbled() {
             return scrobbled;
@@ -317,10 +383,12 @@ function oyoPlayer() {
     };
 
     player.play = function () {
+        active = true;
         player.audio.play();
     };
 
     player.pause = function () {
+        active = false;
         player.audio.pause();
     };
 
@@ -335,44 +403,37 @@ function oyoPlayer() {
             }
         } else {
             if (player.audio.paused) {
+                active = true;
                 player.audio.play();
             } else {
+                active = false;
                 player.audio.pause();
             }
         }
     };
 
     player.skipPrevious = function () {
-        if (playall) {
-            if (counter > 1) {
-                counter = counter - 1;
-                player.changeSource(songs[counter]);
-                return true;
-            } else {
-                counter = 1;
-                player.changeSource(songs[counter]);
-                return false;
-            }
+        if (counter > 1) {
+            counter = counter - 1;
+            player.changeSource(songs[counter]);
+            return true;
         } else {
-            player.audio.currentTime = trackStart;
+            counter = 1;
+            player.changeSource(songs[counter]);
+            return false;
         }
     };
 
     player.skipNext = function () {
-        if (playall) {
-            if (counter < songs.length - 1) {
-                counter = counter + 1;
-                player.changeSource(songs[counter]);
-                return true;
-            } else {
-                counter = 1;
-                active = false;
-                player.changeSource(songs[counter]);
-                return false;
-            }
+        if (counter < songs.length - 1) {
+            counter = counter + 1;
+            player.changeSource(songs[counter]);
+            return true;
         } else {
-            player.audio.pause();
-            player.audio.currentTime = trackStart;
+            counter = 1;
+            active = false;
+            player.changeSource(songs[counter]);
+            return false;
         }
     };
 
@@ -381,8 +442,7 @@ function oyoPlayer() {
     };
 
     player.changeTag = function (html) {
-        $(tag).html(html);
-        initScroll();
+        tagBox.setText(html);
     };
 
     player.changeSource = function (source) {
@@ -421,6 +481,7 @@ function oyoPlayer() {
 
     player.setNotification = function (text) {
         notification = text;
+        tagBox.setText(text);
     };
 
     player.clearPlaylist = function () {
@@ -433,8 +494,9 @@ function oyoPlayer() {
 
     player.addToPlaylist = function (song, tag) {
         var index = songs.length;
-        if (index === 0)
+        if (index === 0) {
             index = 1;
+        }
         songs[index] = song;
         tags[index] = tag;
     };
@@ -494,6 +556,232 @@ function oyoPlayer() {
             maxSampleLength = minSampleLength;
         player.audio.load();
     };
+
+    var playerObserver = new ResizeObserver(function () {
+        changeTrackSlider();
+        $(player.audio).trigger("volumechange");
+    });
+    playerObserver.observe(player);
+
+    player.changeBackgroundColor = function (color) {
+        $(player).css("background-color", color);
+        $(panel).css("background-color", color);
+        playpause.changeBackgroundColor(color);
+        previous.changeBackgroundColor(color);
+        next.changeBackgroundColor(color);
+        speaker.changeBackgroundColor(color);
+        trackSlider.changeBackgroundColor(color);
+        volumeSlider.changeBackgroundColor(color);
+        tagBox.changeBackgroundColor(color);
+    };
+
+    player.changeTextColor = function (color) {
+        $(timeDisplay).css("color", color);
+        tagBox.changeTextColor(color);
+    };
+
+    player.changeControlColors = function (controlColorActive, controlColorInActive) {
+        playpause.changeFillColor(controlColorActive);
+        playpause.changeBorderColors(controlColorActive, controlColorInActive);
+        previous.changeFillColor(controlColorActive);
+        previous.changeBorderColors(controlColorActive, controlColorInActive);
+        next.changeFillColor(controlColorActive);
+        next.changeBorderColors(controlColorActive, controlColorInActive);
+        speaker.changeFillColor(controlColorActive);
+        speaker.changeBorderColors(controlColorActive, controlColorInActive);
+        trackSlider.changeTrackColors(controlColorActive, controlColorInActive);
+        trackSlider.changeThumbColor(controlColorActive);
+        volumeSlider.changeTrackColors(controlColorActive, controlColorInActive);
+        volumeSlider.changeThumbColor(controlColorActive);
+    };
+
+    player.resetColors = function () {
+        $(player).css("background-color", defaultBackgroundColor);
+        $(panel).css("background-color", defaultBackgroundColor);
+        playpause.changeBackgroundColor(defaultBackgroundColor);
+        playpause.resetColors();
+        previous.changeBackgroundColor(defaultBackgroundColor);
+        previous.resetColors();
+        next.changeBackgroundColor(defaultBackgroundColor);
+        next.resetColors();
+        speaker.changeBackgroundColor(defaultBackgroundColor);
+        speaker.resetColors();
+        trackSlider.changeColor(defaultBackgroundColor);
+        trackSlider.resetColors();
+        volumeSlider.changeColor(defaultBackgroundColor);
+        volumeSlider.resetColors();
+        tagBox.changeBackgroundColor(defaultBackgroundColor);
+        $(timeDisplay).css("color", defaultTextColor);
+        tagBox.changeTextColor(defaultTextColor);
+    };
+
+    $(playpause).on("click", oyoPlayPauseButtonClick);
+    $(previous).on("click", oyoPreviousButtonClick);
+    $(next).on("click", oyoNextButtonClick);
+    $(trackSlider).on("mousedown", oyoTrackSliderMouseDown);
+    $(volumeControl).on("mouseenter", oyoVolumeControlMouseEnter);
+    $(volumeControl).on("mouseleave", oyoVolumeControlMouseLeave);
+    $(volumeSlider).on("mousedown", oyoVolumeSliderMouseDown);
+    $(speaker).on("click", oyoSpeakerButtonClick);
+    $(document).on("mousemove", mouseMove);
+    $(document).on("mouseup", mouseUp);
+    $(player).on("keydown", oyoPlayerKeyDown);
+
+    function oyoPlayPauseButtonClick() {
+        if (playpause.state === 1) {
+            active = true;
+        } else {
+            active = false;
+        }
+        if (player.track.duration === Infinity) {
+            if (playpause.state === 1) {
+                player.audio.load();
+            }
+        }
+        player.playPause(player.getCurrentTrack());
+    }
+
+    function oyoPreviousButtonClick() {
+        var previous = player.skipPrevious();
+        if (previous && active) {
+            playpause.changeState();
+        }
+        initPrevNext();
+    }
+
+    function oyoNextButtonClick() {
+        var next = player.skipNext();
+        if (next && active) {
+            playpause.changeState();
+        }
+        initPrevNext();
+    }
+
+    function oyoTrackSliderMouseDown() {
+        changeCurrentTime();
+    }
+
+    function oyoVolumeControlMouseEnter() {
+        if (!volumeSlider.disabled) {
+            $(volumeSlider).css("display", "inline-block");
+            changeTrackSlider();
+        }
+    }
+
+    function oyoVolumeControlMouseLeave() {
+        if (!volumeSlider.disabled && !volumeSlider.active) {
+            $(volumeSlider).css("display", "none");
+            changeTrackSlider();
+        }
+    }
+
+    function oyoVolumeSliderMouseDown() {
+        changeVolume();
+    }
+
+    function oyoSpeakerButtonClick() {
+        player.audio.muted = !player.audio.muted;
+    }
+
+    function mouseMove() {
+        if (trackSlider.active) {
+            changeCurrentTime();
+        }
+        if (volumeSlider.active) {
+            changeVolume();
+        }
+    }
+
+    function mouseUp(event) {
+        var elements = $(volumeControl).add($(volumeControl).find("*")).toArray();
+        if (elements.indexOf(event.target) === -1) {
+            $(volumeSlider).css("display", "none");
+            changeTrackSlider();
+        }
+    }
+
+    function oyoPlayerKeyDown() {
+        changeCurrentTime();
+    }
+
+    function initPrevNext() {
+        if (player.getCurrentTrack() === 1) {
+            previous.disable();
+        } else {
+            previous.enable();
+        }
+        if (player.getCurrentTrack() === player.countSongs()) {
+            next.disable();
+        } else {
+            next.enable();
+        }
+    }
+
+    function formatTime(currentSeconds, durationSeconds) {
+        var aHours, aMinutes, aSeconds;
+        var cHours = Math.floor(currentSeconds / 3600);
+        var cMinutes = Math.floor((currentSeconds - (cHours * 3600)) / 60);
+        var cSeconds = currentSeconds - (cHours * 3600) - (cMinutes * 60);
+        var dHours = Math.floor(durationSeconds / 3600);
+        var dMinutes = Math.floor((durationSeconds - (dHours * 3600)) / 60);
+        var dSeconds = durationSeconds - (dHours * 3600) - (dMinutes * 60);
+        if (cHours > 0 || dHours > 0) {
+            aHours = cHours + ":";
+            aMinutes = cMinutes.toString().padStart(2, "0") + ":";
+            aSeconds = cSeconds.toString().padStart(2, "0");
+        } else {
+            aHours = "";
+            aMinutes = cMinutes + ":";
+            aSeconds = cSeconds.toString().padStart(2, "0");
+        }
+        var time = aHours + aMinutes + aSeconds;
+        if (durationSeconds !== undefined) {
+            if (dHours > 0) {
+                aHours = dHours + ":";
+                aMinutes = dMinutes.toString().padStart(2, "0") + ":";
+                aSeconds = dSeconds.toString().padStart(2, "0");
+            } else {
+                aHours = "";
+                aMinutes = dMinutes + ":";
+                aSeconds = dSeconds.toString().padStart(2, "0");
+            }
+            var durationTime = aHours + aMinutes + aSeconds;
+            time += "/" + durationTime;
+        }
+        return time;
+    }
+
+    function changeCurrentTime() {
+        if (player.track.duration !== Infinity) {
+            var currentTime = player.track.start;
+            var percentage = trackSlider.value / trackSlider.max;
+            currentTime += percentage * player.track.duration;
+            player.track.currentTime = currentTime;
+        }
+    }
+
+    function changeVolume() {
+        var percentage = volumeSlider.value / volumeSlider.max;
+        if (percentage > 0) {
+            player.audio.muted = false;
+        }
+        player.audio.volume = percentage;
+    }
+
+    function changeTrackSlider() {
+        var panelWidth = $(panel).width();
+        var playControlWidth = $(playControl).outerWidth(true);
+        var timeDisplayWidth = $(timeDisplay).outerWidth(true);
+        var volumeControlWidth = $(volumeControl).outerWidth(true);
+        var width = panelWidth - (playControlWidth + timeDisplayWidth + volumeControlWidth);
+        trackSlider.change(width);
+        if (player.track.duration !== Infinity) {
+            if (player.track.duration !== 0) {
+                var value = parseFloat((100 * (player.track.currentTime - player.track.start) / player.track.duration).toFixed(6));
+                trackSlider.value = value;
+            }
+        }
+    }
 
     return player;
 }

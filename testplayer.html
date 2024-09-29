@@ -1,0 +1,45 @@
+<html>
+
+    <head>
+        <title>Test Player</title>
+        <script src="https://code.jquery.com/jquery-3.4.0.js"></script>
+        <script src="oyoplayer.js"></script>
+        <style>
+			.playpause {
+				display: block;
+				margin: auto;
+			}
+        </style>
+    </head>
+
+    <body>
+        <script>
+            $(document).ready(function () {
+                audioPlayer = new oyoPlayer();
+                $("body").append(audioPlayer);
+
+                audioPlayer.addToPlaylist("audio/The Step.mp3", "!!! - The Step");
+                audioPlayer.addToPlaylist("audio/Drop Shot.mp3", "TaxiWars - Drop Shot");
+                audioPlayer.addToPlaylist("audio/How To Disappear Completely.mp3", "Radiohead - How To Disappear Completely");
+                //audioPlayer.addToPlaylist("https://stream.player.arrow.nl/arrow", "Arrow Classic Rock");
+                audioPlayer.setSourceIndex(1);
+                audioPlayer.setNotification("Push Play to start");
+                audioPlayer.state.playall = false;
+                //audioPlayer.state.samples = true;
+
+                $(".playpause").on("click", function () {
+					if (audioPlayer.audio.paused) {
+						audioPlayer.play();
+					} else {
+						audioPlayer.pause();
+					}
+					//audioPlayer.playPause(2);
+                });
+            });
+		</script>
+
+		<button class="playpause">Play/Pause</button>
+		<br>
+
+    </body>
+</html>
