@@ -1,5 +1,5 @@
 # oyoplayer
-<a href="http://oyosoftware.nl/plugins/oyoplayer/testplayer1.html" target="_blank">
+<a href="http://oyosoftware.nl/plugins/oyoplayer/testplayer.html" target="_blank">
   <img src="http://oyosoftware.nl/plugins/oyoplayer/oyoplayer1.jpg" alt="oyobuttons">
 </a>
 <p>Audio Player</p>
