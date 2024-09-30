@@ -626,6 +626,7 @@ function oyoPlayer() {
     $(document).on("mousemove", mouseMove);
     $(document).on("mouseup", mouseUp);
     $(player).on("keydown", oyoPlayerKeyDown);
+    $(volumeControl).on("keydown", oyoVolumeControlKeyDown);
 
     function oyoPlayPauseButtonClick() {
         if (playpause.state === 1) {
@@ -702,6 +703,10 @@ function oyoPlayer() {
 
     function oyoPlayerKeyDown() {
         changeCurrentTime();
+    }
+
+    function oyoVolumeControlKeyDown() {
+        changeVolume();
     }
 
     function initPrevNext() {
