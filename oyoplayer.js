@@ -13,27 +13,39 @@
 var src = $("script").last().attr("src");
 var oyoPlayerLocation = src.substring(0, src.lastIndexOf("/") + 1);
 
-function oyoPlayer() {
+function oyoPlayer(width = 500) {
 
-    var active = false;
+    width = parseInt(width);
+
+    var scrollAllow = true;
+    var scrollView = true;
+
+    var statePlaying = false;
+    var statePaused = true;
+    var stateEnded = true;
     var playall = true;
     var samples = false;
     var scroll = true;
     var scrobbled = false;
+
+    var trackStart = 0;
+    var trackEnd = 0;
+    var trackDuration = 0;
+    var trackCurrentTime = 0;
+
     var notification = "";
     var defaultBackgroundColor = "black";
     var defaultTextColor = "white";
+    var defaultActiveColor = "#527FC3";
+    var defaultInActiveColor = "#B3CEB3";
 
     var counter = 1;
     var currentSong = "";
     var songs = [];
     var tags = [];
     var errors = [];
-
-    var trackStart = 0;
-    var trackEnd = 0;
-    var trackDuration = 0;
-    var trackCurrentTime = 0;
+    var skip = "";
+    var firstTrack, lastTrack;
 
     var sampleLimitBegin = 20;
     var sampleLimitEnd = 40;
@@ -53,9 +65,10 @@ function oyoPlayer() {
     var player = document.createElement("div");
     $(player).attr("class", "oyoplayer");
     $(player).css("box-sizing", "border-box");
-    $(player).css("width", "500px");
-    $(player).css("border-radius", "16px");
-    $(player).css("box-shadow", "8px 8px 16px black");
+    if (width < 350) {
+        width = 350;
+    }
+    $(player).css("width", width);
     $(player).css("overflow", "hidden");
     $(player).css("background-color", defaultBackgroundColor);
     $(player).css("padding", "8px");
@@ -70,10 +83,10 @@ function oyoPlayer() {
     var panel = document.createElement("div");
     $(panel).attr("class", "oyopanel");
     $(panel).css("display", "inline-block");
-    $(panel).css("width", "484px");
+    $(panel).css("width", width - 16);
+    $(panel).css("height", "36px");
     $(panel).css("background-color", defaultBackgroundColor);
     $(panel).css("overflow", "hidden");
-    $(panel).css("border-radius", "16px");
     $(player).append(panel);
 
     var playControl = document.createElement("div");
@@ -140,7 +153,7 @@ function oyoPlayer() {
     speaker.disable();
     $(volumeControl).append(speaker);
 
-    var tagBox = new oyoMarquee(484, 25, 8);
+    var tagBox = new oyoMarquee(width, 25, 8);
     tagBox.changeBackgroundColor(defaultBackgroundColor);
     tagBox.changeTextColor(defaultTextColor);
     $(player).append(tagBox);
@@ -155,8 +168,9 @@ function oyoPlayer() {
     $(player.audio).on("volumechange", volumeChange);
 
     function loadedMetaData() {
+        stateEnded = false;
         scrobbled = false;
-        if (!active && notification !== "") {
+        if (statePaused && notification !== "") {
             player.changeTag(notification);
             notification = "";
         } else {
@@ -169,16 +183,26 @@ function oyoPlayer() {
                 trackDuration = player.audio.duration;
                 break;
             case samples && player.audio.duration !== Infinity:
-                trackStart = Math.round(100 * (sampleLimitBegin / 100) * player.audio.duration) / 100;
-                trackEnd = Math.round(100 * (sampleLimitEnd / 100 * player.audio.duration)) / 100;
-                trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
-                if (trackDuration < minSampleLength)
+                trackStart = (sampleLimitBegin / 100) * player.audio.duration;
+                trackStart = Math.floor(1000000 * trackStart) / 1000000;
+                trackEnd = (sampleLimitEnd / 100) * player.audio.duration;
+                trackEnd = Math.ceil(1000000 * trackEnd) / 1000000;
+                trackDuration = trackEnd - trackStart;
+                trackDuration = Math.floor(1000000 * trackDuration) / 1000000;
+                if (trackDuration < minSampleLength) {
                     trackEnd = trackStart + minSampleLength;
-                if (trackDuration > maxSampleLength)
+                    trackEnd = Math.ceil(1000000 * trackEnd) / 1000000;
+                }
+                if (trackDuration > maxSampleLength) {
                     trackEnd = trackStart + maxSampleLength;
-                if (trackEnd > player.audio.duration)
-                    trackEnd = Math.round(100 * ((100 - sampleLimitBegin) / 100 * player.audio.duration)) / 100;
-                trackDuration = Math.round(100 * (trackEnd - trackStart)) / 100;
+                    trackEnd = Math.ceil(1000000 * trackEnd) / 1000000;
+                }
+                if (trackEnd > player.audio.duration) {
+                    trackEnd = (((100 - sampleLimitBegin) / 100) * player.audio.duration);
+                    trackEnd = Math.ceil(1000000 * trackEnd) / 1000000;
+                }
+                trackDuration = trackEnd - trackStart;
+                trackDuration = Math.floor(1000000 * trackDuration) / 1000000;
                 break;
             case player.audio.duration === Infinity:
                 trackStart = 0;
@@ -192,8 +216,9 @@ function oyoPlayer() {
         volumeSlider.enable();
         speaker.enable();
         initPrevNext();
+
         trackSlider.reset();
-        if (player.track.duration !== Infinity) {
+        if (trackDuration !== Infinity) {
             trackSlider.enable();
         } else {
             trackSlider.disable();
@@ -201,20 +226,26 @@ function oyoPlayer() {
     }
 
     function canPlay() {
-        if (active && player.audio.currentTime === trackStart) {
+        var difference = Math.ceil(1000000 * (trackStart - trackCurrentTime)) / 1000000;
+        if (difference !== 0.000001) {
+            difference = 0;
+        }
+        if (!statePaused && trackCurrentTime === (trackStart - difference)) {
             player.audio.play();
         }
     }
 
     function playing() {
+        statePlaying = true;
+        statePaused = false;
+        stateEnded = false;
         player.changeTag(tags[counter]);
-
         if (playpause.state === 0) {
             playpause.changeState();
         }
     }
 
-    function timeUpdate(event) {
+    function timeUpdate() {
         // conditions scrobbling LastFM: song is longer than 30 seconds,
         // song has played half it's duration or 240 seconds
         if (player.audio.duration !== Infinity && player.audio.duration > 30 && !scrobbled) {
@@ -227,40 +258,43 @@ function oyoPlayer() {
         }
 
         trackCurrentTime = player.audio.currentTime;
+
         switch (true) {
-            case !samples && player.audio.duration !== Infinity:
+            case !samples && trackDuration !== Infinity:
                 if (player.audio.duration > trackDuration) {
+                    trackEnd = player.audio.duration;
                     trackDuration = player.audio.duration;
                 }
-                if (player.audio.duration > 0 && player.audio.currentTime >= player.audio.duration) {
+                var difference = Math.ceil(1000000 * (trackEnd - trackCurrentTime)) / 1000000;
+                if (difference !== 0.000001) {
+                    difference = 0;
+                }
+                if (trackCurrentTime >= (trackEnd - difference)) {
                     if (!player.audio.ended) {
                         $(player.audio).trigger("ended");
                     }
                 }
+                changeTrackPosition();
                 break;
-            case samples && player.audio.duration !== Infinity:
-                if (player.audio.currentTime < trackStart) {
-                    player.audio.currentTime = trackStart;
+            case samples && trackDuration !== Infinity:
+                var difference = Math.ceil(1000000 * (trackEnd - trackCurrentTime)) / 1000000;
+                if (difference !== 0.000001) {
+                    difference = 0;
                 }
-                if (player.audio.currentTime > trackEnd) {
-                    if (playall) {
-                        player.skipNext();
-                    } else {
-                        active = false;
-                        player.audio.currentTime = trackStart;
-                        player.audio.pause();
-                    }
+                if (trackCurrentTime >= (trackEnd - difference)) {
+                    $(player.audio).trigger("ended");
                 }
+                changeTrackPosition();
                 break;
-            case player.audio.duration === Infinity:
+            case trackDuration === Infinity:
                 break;
         }
 
-        var current = Math.floor(player.track.currentTime - player.track.start);
-        if (!isNaN(player.track.duration)) {
+        var current = Math.floor(trackCurrentTime - trackStart);
+        if (!isNaN(trackDuration)) {
             var time = "";
-            if (player.track.duration !== Infinity) {
-                var duration = Math.floor(player.track.duration);
+            if (trackDuration !== Infinity) {
+                var duration = Math.floor(trackDuration);
                 time = formatTime(current, duration);
             } else {
                 time = formatTime(current);
@@ -274,7 +308,7 @@ function oyoPlayer() {
     }
 
     function paused() {
-        if (!active) {
+        if (statePaused) {
             if (playpause.state === 1) {
                 playpause.changeState();
             }
@@ -284,9 +318,15 @@ function oyoPlayer() {
     function ended() {
         if (trackDuration !== Infinity) {
             if (playall) {
-                player.skipNext();
+                if (!stateEnded) {
+                    statePlaying = false;
+                    stateEnded = true;
+                    player.skipNext();
+                }
             } else {
-                active = false;
+                statePlaying = false;
+                statePaused = true;
+                stateEnded = true;
                 player.audio.currentTime = trackStart;
             }
         } else {
@@ -294,7 +334,7 @@ function oyoPlayer() {
             player.audio.play();
         }
 
-        if (!active) {
+        if (statePaused) {
             if (playpause.state === 1) {
                 playpause.changeState();
             }
@@ -310,7 +350,12 @@ function oyoPlayer() {
             }
         }
         if (errorcount < songs.length - 1) {
-            player.skipNext();
+            stateEnded = true;
+            if (skip === "previous") {
+                player.skipPrevious();
+            } else {
+                player.skipNext();
+            }
         }
     }
 
@@ -328,35 +373,45 @@ function oyoPlayer() {
         $(".oyotrackbefore", volumeSlider).width(width);
     }
 
-    player.track = {
-        get start() {
-            return trackStart;
+    Object.defineProperty(player, "scrollAllow", {
+        get() {
+            return scrollAllow;
         },
-        get end() {
-            return trackEnd;
-        },
-        get duration() {
-            return trackDuration;
-        },
-        get currentTime() {
-            return trackCurrentTime;
-        },
-        set currentTime(value) {
-            player.audio.currentTime = value;
+        set(value) {
+            scrollAllow = value;
+            tagBox.scrollAllow = scrollAllow;
+            if (!scrollAllow) {
+                scroll = false;
+                tagBox.scroll = false;
+            }
         }
-    };
+    });
+
+    Object.defineProperty(player, "scrollView", {
+        get() {
+            return scrollView;
+        },
+        set(value) {
+            scrollView = value;
+            if (scrollView) {
+                $(tagBox).css("display", "block");
+            } else {
+                $(tagBox).css("display", "none");
+                scroll = false;
+                tagBox.scroll = false;
+            }
+        }
+    });
 
     player.state = {
-        get active() {
-            return active;
-        },
         get playing() {
-            var playing = player.audio.duration > 0 && !player.audio.paused && !player.audio.ended && player.audio.readyState > 2;
-            return playing;
+            return statePlaying;
         },
         get paused() {
-            var paused = player.audio.duration > 0 && player.audio.paused && !player.audio.ended && player.audio.readyState > 2 && !player.audio.seeking;
-            return paused;
+            return statePaused;
+        },
+        get ended() {
+            return stateEnded;
         },
         get playall() {
             return playall;
@@ -374,28 +429,52 @@ function oyoPlayer() {
             return scroll;
         },
         set scroll(value) {
-            scroll = value;
-            tagBox.scroll = scroll;
+            if (scrollAllow && scrollView) {
+                scroll = value;
+                tagBox.scroll = scroll;
+            }
         },
         get scrobbled() {
             return scrobbled;
         }
     };
 
+    player.track = {
+        get start() {
+            return trackStart;
+        },
+        get end() {
+            return trackEnd;
+        },
+        get duration() {
+            return trackDuration;
+        },
+        get currentTime() {
+            return trackCurrentTime;
+        }
+    };
+
     player.play = function () {
-        active = true;
+        statePlaying = true;
+        statePaused = false;
+        stateEnded = false;
         player.audio.play();
     };
 
     player.pause = function () {
-        active = false;
+        statePlaying = false;
+        statePaused = true;
         player.audio.pause();
     };
 
     player.playPause = function (index) {
+        if (!Boolean(lastTrack)) {
+            setTrackIndexes();
+        }
         if (songs[index] !== currentSong) {
             if (songs[index] !== undefined) {
-                active = true;
+                statePlaying = true;
+                statePaused = false;
                 counter = index;
                 player.changeSource(songs[counter]);
             } else {
@@ -403,35 +482,41 @@ function oyoPlayer() {
             }
         } else {
             if (player.audio.paused) {
-                active = true;
+                statePlaying = true;
+                statePaused = false;
                 player.audio.play();
             } else {
-                active = false;
+                statePlaying = false;
+                statePaused = true;
                 player.audio.pause();
             }
         }
     };
 
     player.skipPrevious = function () {
-        if (counter > 1) {
+        skip = "previous";
+        if (counter > firstTrack) {
             counter = counter - 1;
             player.changeSource(songs[counter]);
             return true;
         } else {
-            counter = 1;
+            counter = firstTrack;
             player.changeSource(songs[counter]);
             return false;
         }
     };
 
     player.skipNext = function () {
-        if (counter < songs.length - 1) {
+        skip = "next";
+        if (counter < lastTrack) {
             counter = counter + 1;
             player.changeSource(songs[counter]);
             return true;
         } else {
-            counter = 1;
-            active = false;
+            counter = firstTrack;
+            statePlaying = false;
+            statePaused = true;
+            stateEnded = true;
             player.changeSource(songs[counter]);
             return false;
         }
@@ -455,7 +540,9 @@ function oyoPlayer() {
             switch (true) {
                 case protocol === "file:" ||
                     (protocol !== "file:" &&
-                        source.substring(0, 2) !== "//" && source.substring(1, 3) !== ":/" && source.substring(0, 7) !== "file://") :
+                        source.substring(0, 2) !== "//" &&
+                        source.substring(1, 3) !== ":/" &&
+                        source.substring(0, 7) !== "file://") :
                     $(player.audio).attr("src", source);
                     break;
                 default:
@@ -475,6 +562,9 @@ function oyoPlayer() {
     };
 
     player.setSourceIndex = function (index) {
+        if (!Boolean(lastTrack)) {
+            setTrackIndexes();
+        }
         counter = index;
         player.changeSource(songs[counter]);
     };
@@ -489,7 +579,21 @@ function oyoPlayer() {
         songs = [];
         tags = [];
         errors = [];
-        active = false;
+        firstTrack = null;
+        lastTrack = null;
+        playpause.disable();
+        previous.disable();
+        next.disable();
+        trackSlider.disable();
+        volumeSlider.disable();
+        speaker.disable();
+        trackStart = 0;
+        trackEnd = 0;
+        trackDuration = 0;
+        trackCurrentTime = 0;
+        statePlaying = false;
+        statePaused = true;
+        stateEnded = true;
     };
 
     player.addToPlaylist = function (song, tag) {
@@ -558,7 +662,10 @@ function oyoPlayer() {
     };
 
     var playerObserver = new ResizeObserver(function () {
+        var width = parseInt($(player).css("width")) - 16;
+        $(panel).css("width", width);
         changeTrackSlider();
+        $(tagBox).css("width", width);
         $(player.audio).trigger("volumechange");
     });
     playerObserver.observe(player);
@@ -580,61 +687,56 @@ function oyoPlayer() {
         tagBox.changeTextColor(color);
     };
 
-    player.changeControlColors = function (controlColorActive, controlColorInActive) {
-        playpause.changeFillColor(controlColorActive);
-        playpause.changeBorderColors(controlColorActive, controlColorInActive);
-        previous.changeFillColor(controlColorActive);
-        previous.changeBorderColors(controlColorActive, controlColorInActive);
-        next.changeFillColor(controlColorActive);
-        next.changeBorderColors(controlColorActive, controlColorInActive);
-        speaker.changeFillColor(controlColorActive);
-        speaker.changeBorderColors(controlColorActive, controlColorInActive);
-        trackSlider.changeTrackColors(controlColorActive, controlColorInActive);
-        trackSlider.changeThumbColor(controlColorActive);
-        volumeSlider.changeTrackColors(controlColorActive, controlColorInActive);
-        volumeSlider.changeThumbColor(controlColorActive);
+    player.changeControlColors = function (activeColor = defaultActiveColor, inActiveColor = defaultInActiveColor, handleColor) {
+        playpause.changeFillColor(activeColor);
+        playpause.changeBorderColors(activeColor, inActiveColor);
+        previous.changeFillColor(activeColor);
+        previous.changeBorderColors(activeColor, inActiveColor);
+        next.changeFillColor(activeColor);
+        next.changeBorderColors(activeColor, inActiveColor);
+        speaker.changeFillColor(activeColor);
+        speaker.changeBorderColors(activeColor, inActiveColor);
+        trackSlider.changeTrackColors(activeColor, inActiveColor);
+        trackSlider.changeThumbColor(handleColor);
+        volumeSlider.changeTrackColors(activeColor, inActiveColor);
+        volumeSlider.changeThumbColor(handleColor);
     };
 
     player.resetColors = function () {
         $(player).css("background-color", defaultBackgroundColor);
         $(panel).css("background-color", defaultBackgroundColor);
-        playpause.changeBackgroundColor(defaultBackgroundColor);
         playpause.resetColors();
-        previous.changeBackgroundColor(defaultBackgroundColor);
         previous.resetColors();
-        next.changeBackgroundColor(defaultBackgroundColor);
         next.resetColors();
-        speaker.changeBackgroundColor(defaultBackgroundColor);
         speaker.resetColors();
-        trackSlider.changeColor(defaultBackgroundColor);
         trackSlider.resetColors();
-        volumeSlider.changeColor(defaultBackgroundColor);
         volumeSlider.resetColors();
-        tagBox.changeBackgroundColor(defaultBackgroundColor);
+        playpause.changeBackgroundColor(defaultBackgroundColor);
+        previous.changeBackgroundColor(defaultBackgroundColor);
+        next.changeBackgroundColor(defaultBackgroundColor);
+        speaker.changeBackgroundColor(defaultBackgroundColor);
+        trackSlider.changeBackgroundColor(defaultBackgroundColor);
+        volumeSlider.changeBackgroundColor(defaultBackgroundColor);
         $(timeDisplay).css("color", defaultTextColor);
+        tagBox.changeBackgroundColor(defaultBackgroundColor);
         tagBox.changeTextColor(defaultTextColor);
     };
 
-    $(playpause).on("click", oyoPlayPauseButtonClick);
-    $(previous).on("click", oyoPreviousButtonClick);
-    $(next).on("click", oyoNextButtonClick);
-    $(trackSlider).on("mousedown", oyoTrackSliderMouseDown);
-    $(volumeControl).on("mouseenter", oyoVolumeControlMouseEnter);
-    $(volumeControl).on("mouseleave", oyoVolumeControlMouseLeave);
-    $(volumeSlider).on("mousedown", oyoVolumeSliderMouseDown);
-    $(speaker).on("click", oyoSpeakerButtonClick);
+    $(playpause).on("click", playPauseButtonClick);
+    $(previous).on("click", previousButtonClick);
+    $(next).on("click", nextButtonClick);
+    $(trackSlider).on("mousedown", trackSliderMouseDown);
+    $(volumeControl).on("mouseenter", volumeControlMouseEnter);
+    $(volumeControl).on("mouseleave", volumeControlMouseLeave);
+    $(volumeSlider).on("mousedown", volumeSliderMouseDown);
+    $(speaker).on("click", speakerButtonClick);
     $(document).on("mousemove", mouseMove);
     $(document).on("mouseup", mouseUp);
-    $(player).on("keydown", oyoPlayerKeyDown);
-    $(volumeControl).on("keydown", oyoVolumeControlKeyDown);
+    $(player).on("keydown", playerKeyDown);
+    $(volumeControl).on("keydown", volumeControlKeyDown);
 
-    function oyoPlayPauseButtonClick() {
-        if (playpause.state === 1) {
-            active = true;
-        } else {
-            active = false;
-        }
-        if (player.track.duration === Infinity) {
+    function playPauseButtonClick() {
+        if (trackDuration === Infinity) {
             if (playpause.state === 1) {
                 player.audio.load();
             }
@@ -642,45 +744,45 @@ function oyoPlayer() {
         player.playPause(player.getCurrentTrack());
     }
 
-    function oyoPreviousButtonClick() {
+    function previousButtonClick() {
         var previous = player.skipPrevious();
-        if (previous && active) {
+        if (previous && !statePaused) {
             playpause.changeState();
         }
         initPrevNext();
     }
 
-    function oyoNextButtonClick() {
+    function nextButtonClick() {
         var next = player.skipNext();
-        if (next && active) {
+        if (next && !statePaused) {
             playpause.changeState();
         }
         initPrevNext();
     }
 
-    function oyoTrackSliderMouseDown() {
+    function trackSliderMouseDown() {
         changeCurrentTime();
     }
 
-    function oyoVolumeControlMouseEnter() {
+    function volumeControlMouseEnter() {
         if (!volumeSlider.disabled) {
             $(volumeSlider).css("display", "inline-block");
             changeTrackSlider();
         }
     }
 
-    function oyoVolumeControlMouseLeave() {
+    function volumeControlMouseLeave() {
         if (!volumeSlider.disabled && !volumeSlider.active) {
             $(volumeSlider).css("display", "none");
             changeTrackSlider();
         }
     }
 
-    function oyoVolumeSliderMouseDown() {
+    function volumeSliderMouseDown() {
         changeVolume();
     }
 
-    function oyoSpeakerButtonClick() {
+    function speakerButtonClick() {
         player.audio.muted = !player.audio.muted;
     }
 
@@ -701,24 +803,82 @@ function oyoPlayer() {
         }
     }
 
-    function oyoPlayerKeyDown() {
+    function playerKeyDown() {
         changeCurrentTime();
     }
 
-    function oyoVolumeControlKeyDown() {
+    function volumeControlKeyDown() {
         changeVolume();
     }
 
     function initPrevNext() {
-        if (player.getCurrentTrack() === 1) {
+        if (player.getCurrentTrack() === firstTrack) {
             previous.disable();
         } else {
             previous.enable();
         }
-        if (player.getCurrentTrack() === player.countSongs()) {
+        if (player.getCurrentTrack() === lastTrack) {
             next.disable();
         } else {
             next.enable();
+        }
+    }
+
+    function setTrackIndexes() {
+        for (var i = 1; i < songs.length - 1 ; i++) {
+            getTrackIndex(true, i);
+            if (Boolean(firstTrack)) {
+                break;
+            }
+        }
+        for (var i = songs.length - 1; i > 0; i--) {
+            getTrackIndex(false, i);
+            if (Boolean(lastTrack)) {
+                break;
+            }
+        }
+        function getTrackIndex(top, index) {
+            var source = songs[index];
+            source = source.replaceAll("\\", "/'");
+            source = source.replaceAll("#", "%23");
+            var protocol = document.location.protocol;
+
+            switch (true) {
+                case protocol === "file:" ||
+                    (protocol !== "file:" &&
+                        source.substring(0, 2) !== "//" &&
+                        source.substring(1, 3) !== ":/" &&
+                        source.substring(0, 7) !== "file://") :
+                    var url = source;
+                    $.ajax({
+                        url: url,
+                        async: false,
+                        success: function () {
+                            if (top) {
+                                firstTrack = index;
+                            } else {
+                                lastTrack = index;
+                            }
+                        }
+                    });
+                    break;
+                default:
+                    var url = oyoPlayerLocation + "checkAudio.php";
+                    $.ajax({
+                        url: url,
+                        data: {source: source},
+                        async: false,
+                        success: function (exists) {
+                            if (exists) {
+                                if (top) {
+                                    firstTrack = index;
+                                } else {
+                                    lastTrack = index;
+                                }
+                            }
+                        }
+                    });
+            }
         }
     }
 
@@ -757,11 +917,13 @@ function oyoPlayer() {
     }
 
     function changeCurrentTime() {
-        if (player.track.duration !== Infinity) {
-            var currentTime = player.track.start;
+        if (trackDuration !== Infinity) {
             var percentage = trackSlider.value / trackSlider.max;
-            currentTime += percentage * player.track.duration;
-            player.track.currentTime = currentTime;
+            percentage = Math.ceil(1000000 * percentage) / 1000000;
+            var currentTime = trackStart;
+            currentTime += percentage * trackDuration;
+            currentTime = Math.ceil(1000000 * currentTime) / 1000000;
+            player.audio.currentTime = currentTime;
         }
     }
 
@@ -780,9 +942,13 @@ function oyoPlayer() {
         var volumeControlWidth = $(volumeControl).outerWidth(true);
         var width = panelWidth - (playControlWidth + timeDisplayWidth + volumeControlWidth);
         trackSlider.change(width);
-        if (player.track.duration !== Infinity) {
-            if (player.track.duration !== 0) {
-                var value = parseFloat((100 * (player.track.currentTime - player.track.start) / player.track.duration).toFixed(6));
+    }
+
+    function changeTrackPosition() {
+        if (trackDuration !== Infinity) {
+            if (trackDuration !== 0) {
+                var value = (100 * (trackCurrentTime - trackStart) / trackDuration);
+                value = Math.ceil(1000000 * value) / 1000000;
                 trackSlider.value = value;
             }
         }
