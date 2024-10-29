@@ -133,8 +133,11 @@ function oyoSlider(sliderWidth, sliderHeight, sliderBorderRadius, trackWidth, tr
 
     function mouseOver() {
         if (!slider.disabled) {
-            $(thumb).css("display", "block");
-            $("body").css("cursor", "pointer");
+            var length = $(".oyoactive").length;
+            if (length === 0) {
+                $(thumb).css("display", "block");
+                $("body").css("cursor", "pointer");
+            }
         }
     }
 
@@ -157,6 +160,7 @@ function oyoSlider(sliderWidth, sliderHeight, sliderBorderRadius, trackWidth, tr
             $(thumb).addClass("oyoactive");
             var offsetX = $(track).offset().left + parseInt($(track).css("border-left-width"));
             trackValue = trackMin + (trackMax - trackMin) * (event.pageX - offsetX) / $(track).width();
+            trackValue = Math.ceil(1000000 * trackValue) / 1000000;
             changeThumbPosition();
         }
     }
@@ -167,6 +171,7 @@ function oyoSlider(sliderWidth, sliderHeight, sliderBorderRadius, trackWidth, tr
             if (mousedown && $(thumb).hasClass("oyoactive")) {
                 var offsetX = $(track).offset().left + parseInt($(track).css("border-left-width"));
                 trackValue = trackMin + (trackMax - trackMin) * (event.pageX - offsetX) / $(track).width();
+                trackValue = Math.ceil(1000000 * trackValue) / 1000000;
                 changeThumbPosition();
                 document.getSelection().removeAllRanges();
             } else {
@@ -275,6 +280,7 @@ function oyoSlider(sliderWidth, sliderHeight, sliderBorderRadius, trackWidth, tr
         },
         set: function (value) {
             trackValue = value;
+            trackValue = Math.ceil(1000000 * trackValue) / 1000000;
             changeThumbPosition();
         }
     });
@@ -301,9 +307,6 @@ function oyoSlider(sliderWidth, sliderHeight, sliderBorderRadius, trackWidth, tr
     };
 
     slider.changeTrackColors = function (beforeColor, afterColor) {
-        if (afterColor === undefined) {
-            afterColor = beforeColor;
-        }
         $(trackBefore).css("background-color", beforeColor);
         $(trackAfter).css("background-color", afterColor);
     };

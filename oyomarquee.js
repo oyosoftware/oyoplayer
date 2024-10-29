@@ -13,6 +13,7 @@ function oyoMarquee(marqueeWidth, marqueeHeight, marqueeBorderRadius, textDirect
 
     var width, height, borderRadius, direction;
     var scroll = true;
+    var scrollAllow = true;
     var speed = 1;
     var loop = "infinite";
     var delay = 0;
@@ -115,8 +116,10 @@ function oyoMarquee(marqueeWidth, marqueeHeight, marqueeBorderRadius, textDirect
     }
 
     $(marquee).on("click", function () {
-        scroll = !scroll;
-        initScroll();
+        if (scrollAllow) {
+            scroll = !scroll;
+            initScroll();
+        }
     });
 
     function initScroll() {
@@ -162,6 +165,18 @@ function oyoMarquee(marqueeWidth, marqueeHeight, marqueeBorderRadius, textDirect
         set: function (value) {
             scroll = value;
             initScroll();
+        }
+    });
+
+    Object.defineProperty(marquee, "scrollAllow", {
+        get: function () {
+            return scrollAllow;
+        },
+        set: function (value) {
+            scrollAllow = value;
+            if (!scrollAllow) {
+                scroll = false;
+            }
         }
     });
 
