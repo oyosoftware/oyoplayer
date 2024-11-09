@@ -1,17 +1,17 @@
 <html>
-	<head>
-		<title>Test Player</title>
-		<script src="https://code.jquery.com/jquery-3.4.0.min.js"></script>
-		<script src="oyoplayer.js"></script>
-		<style>
+    <head>
+        <title>Test Player</title>
+        <script src="https://code.jquery.com/jquery-3.4.0.min.js"></script>
+        <script src="oyoplayer.js"></script>
+        <style>
             .oyoplayer {
                 border-radius       : 16px;
                 box-shadow          : 4px 4px 8px rgba(0, 0, 0, 0.5);
             }
-		</style>
-	</head>
-	<body>
-		<script>
+        </style>
+    </head>
+    <body>
+        <script>
             $(document).ready(function () {
                 audioPlayer = new oyoPlayer();
                 $("body").append(audioPlayer);
@@ -22,6 +22,6 @@
                 audioPlayer.setSourceIndex(1);
                 audioPlayer.setNotification("Push Play to start");
             });
-		</script>
-	</body>
+        </script>
+    </body>
 </html>
