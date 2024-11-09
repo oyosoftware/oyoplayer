@@ -10,9 +10,6 @@
  * it also can play samples and has a marquee
  */
 
-var src = $("script").last().attr("src");
-var oyoPlayerLocation = src.substring(0, src.lastIndexOf("/") + 1);
-
 function oyoPlayer(width = 500) {
 
     width = parseInt(width);
@@ -44,7 +41,7 @@ function oyoPlayer(width = 500) {
     var songs = [];
     var tags = [];
     var errors = [];
-    var skip = "";
+    var skipNext = true;
     var firstTrack, lastTrack;
 
     var sampleLimitBegin = 20;
@@ -341,10 +338,10 @@ function oyoPlayer(width = 500) {
         }
         if (errorcount < player.countSongs()) {
             stateEnded = true;
-            if (skip === "previous") {
-                player.skipPrevious();
-            } else {
+            if (skipNext || counter === 1) {
                 player.skipNext();
+            } else {
+                player.skipPrevious();
             }
         }
     }
@@ -362,6 +359,24 @@ function oyoPlayer(width = 500) {
         var width = left + $(".oyothumb", volumeSlider).width() / 2;
         $(".oyotrackbefore", volumeSlider).width(width);
     }
+
+    Object.defineProperty(player, "firstTrack", {
+        get() {
+            return firstTrack;
+        },
+        set(value) {
+            firstTrack = value;
+        }
+    });
+
+    Object.defineProperty(player, "lastTrack", {
+        get() {
+            return lastTrack;
+        },
+        set(value) {
+            lastTrack = value;
+        }
+    });
 
     Object.defineProperty(player, "scrollAllow", {
         get() {
@@ -459,7 +474,7 @@ function oyoPlayer(width = 500) {
 
     player.playPause = function (index) {
         if (!Boolean(firstTrack)) {
-            setTrackIndexes(function() {
+            setTrackIndexes(function () {
                 playPause();
             });
         } else {
@@ -489,7 +504,7 @@ function oyoPlayer(width = 500) {
     };
 
     player.skipPrevious = function () {
-        skip = "previous";
+        skipNext = false;
         if (counter > firstTrack) {
             counter = counter - 1;
             player.changeSource(songs[counter]);
@@ -502,7 +517,7 @@ function oyoPlayer(width = 500) {
     };
 
     player.skipNext = function () {
-        skip = "next";
+        skipNext = true;
         if (counter < lastTrack) {
             counter = counter + 1;
             player.changeSource(songs[counter]);
@@ -530,35 +545,13 @@ function oyoPlayer(width = 500) {
             currentSong = source;
             source = source.replaceAll("\\", "/'");
             source = source.replaceAll("#", "%23");
-            var protocol = document.location.protocol;
-
-            switch (true) {
-                case protocol === "file:" ||
-                    (protocol !== "file:" &&
-                        source.substring(0, 2) !== "//" &&
-                        source.substring(1, 3) !== ":/" &&
-                        source.substring(0, 7) !== "file://") :
-                    $(player.audio).attr("src", source);
-                    break;
-                default:
-                    var url = oyoPlayerLocation + "getAudio.php";
-                    $.ajax({
-                        url: url,
-                        cache: false,
-                        data: {source: source},
-                        xhrFields: {responseType: "blob"},
-                        dataType: "binary",
-                        success: function (data) {
-                            $(player.audio).attr("src", URL.createObjectURL(data));
-                        }
-                    });
-            }
+            $(player.audio).attr("src", source);
         }
     };
 
     player.setSourceIndex = function (index) {
         if (!Boolean(lastTrack)) {
-            setTrackIndexes(function() {
+            setTrackIndexes(function () {
                 setSourceIndex();
             });
         } else {
@@ -583,6 +576,7 @@ function oyoPlayer(width = 500) {
         songs = [];
         tags = [];
         errors = [];
+        skipNext = true;
         firstTrack = null;
         lastTrack = null;
         playpause.disable();
@@ -854,15 +848,15 @@ function oyoPlayer(width = 500) {
             var source = songs[index];
             source = source.replaceAll("\\", "/'");
             source = source.replaceAll("#", "%23");
-            var response = await fetch(source);
-            var ok = await response.ok;
-            if (ok) {
-                if (top) {
-                    firstTrack = index;
-                } else {
-                    lastTrack = index;
+            await fetch(source).then(function (response) {
+                if (response.ok) {
+                    if (top) {
+                        firstTrack = index;
+                    } else {
+                        lastTrack = index;
+                    }
                 }
-            }
+            });
         }
     }
 
