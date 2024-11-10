@@ -29,6 +29,11 @@ function oyoPlayer(width = 500) {
     var trackEnd = 0;
     var trackDuration = 0;
     var trackCurrentTime = 0;
+    var trackVolume = 1;
+    var trackFadeLength = 10;
+    var currentFadeLength = 0;
+    var trackFadeIn = 0;
+    var trackFadeOut = 0;
 
     var notification = "";
     var defaultBackgroundColor = "black";
@@ -190,6 +195,13 @@ function oyoPlayer(width = 500) {
                 }
                 trackDuration = trackEnd - trackStart;
                 trackDuration = Math.floor(1000000 * trackDuration) / 1000000;
+                if (trackFadeLength <= (trackDuration / 2) ) {
+                    currentFadeLength  = trackFadeLength;
+                } else {
+                    currentFadeLength = trackDuration / 2;
+                }
+                trackFadeIn = trackStart + currentFadeLength;
+                trackFadeOut = trackEnd - currentFadeLength;
                 break;
             case player.audio.duration === Infinity:
                 trackStart = 0;
@@ -272,6 +284,25 @@ function oyoPlayer(width = 500) {
                     $(player.audio).trigger("ended");
                 }
                 changeTrackPosition();
+                player.audio.volume = trackVolume;
+                var fadeInTime = trackCurrentTime - trackStart;
+                if (fadeInTime < 0) {
+                    fadeInTime = 0;
+                }
+                if (trackCurrentTime < trackFadeIn) {
+                    var volume = fadeInTime / currentFadeLength * trackVolume;
+                    volume = Math.ceil(1000000 * volume) / 1000000;
+                    player.audio.volume = volume;
+                }
+                var fadeOutTime = trackEnd - trackCurrentTime;
+                if (fadeOutTime < 0) {
+                    fadeOutTime = 0;
+                }
+                if (trackCurrentTime > trackFadeOut) {
+                    var volume = fadeOutTime / currentFadeLength * trackVolume;
+                    volume = Math.ceil(1000000 * volume) / 1000000;
+                    player.audio.volume = volume;
+                }
                 break;
             case trackDuration === Infinity:
                 break;
@@ -346,18 +377,20 @@ function oyoPlayer(width = 500) {
         }
     }
 
-    function volumeChange() {
-        if (((player.audio.muted || player.audio.volume === 0) && speaker.state === 0) ||
-            ((!player.audio.muted && player.audio.volume !== 0) && speaker.state === 1)) {
-            speaker.changeState();
+    function volumeChange(event) {
+        if (!samples || event.isTrigger) {
+            if (((player.audio.muted || player.audio.volume === 0) && speaker.state === 0) ||
+                ((!player.audio.muted && player.audio.volume !== 0) && speaker.state === 1)) {
+                speaker.changeState();
+            }
+            var left = player.audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
+            if (player.audio.muted) {
+                left = -$(".oyothumb", volumeSlider).width() / 2;
+            }
+            $(".oyothumb", volumeSlider).css("left", left);
+            var width = left + $(".oyothumb", volumeSlider).width() / 2;
+            $(".oyotrackbefore", volumeSlider).width(width);
         }
-        var left = player.audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
-        if (player.audio.muted) {
-            left = -$(".oyothumb", volumeSlider).width() / 2;
-        }
-        $(".oyothumb", volumeSlider).css("left", left);
-        var width = left + $(".oyothumb", volumeSlider).width() / 2;
-        $(".oyotrackbefore", volumeSlider).width(width);
     }
 
     Object.defineProperty(player, "firstTrack", {
@@ -456,6 +489,18 @@ function oyoPlayer(width = 500) {
         },
         get currentTime() {
             return trackCurrentTime;
+        },
+        get volume() {
+            return trackVolume * 100;
+        },
+        set volume(value) {
+            trackVolume = value / 100;
+        },
+        get fadeLength() {
+            return trackFadeLength;
+        },
+        set fadeLength(value) {
+            trackFadeLength = value;
         }
     };
 
@@ -911,6 +956,7 @@ function oyoPlayer(width = 500) {
             player.audio.muted = false;
         }
         player.audio.volume = percentage;
+        trackVolume = percentage;
     }
 
     function changeTrackSlider() {
