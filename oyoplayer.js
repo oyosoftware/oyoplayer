@@ -393,24 +393,6 @@ function oyoPlayer(width = 500) {
         }
     }
 
-    Object.defineProperty(player, "firstTrack", {
-        get() {
-            return firstTrack;
-        },
-        set(value) {
-            firstTrack = value;
-        }
-    });
-
-    Object.defineProperty(player, "lastTrack", {
-        get() {
-            return lastTrack;
-        },
-        set(value) {
-            lastTrack = value;
-        }
-    });
-
     Object.defineProperty(player, "scrollAllow", {
         get() {
             return scrollAllow;
@@ -501,6 +483,18 @@ function oyoPlayer(width = 500) {
         },
         set fadeLength(value) {
             trackFadeLength = value;
+        },
+        get first() {
+            return firstTrack;
+        },
+        set first(value) {
+            firstTrack = value;
+        },
+        get last() {
+            return lastTrack;
+        },
+        set last(value) {
+            lastTrack = value;
         }
     };
 
@@ -643,6 +637,12 @@ function oyoPlayer(width = 500) {
         var index = player.countSongs() + 1;
         songs[index] = song;
         tags[index] = tag;
+        if (!Boolean(document.domain)) {
+            if (!Boolean(firstTrack)) {
+                firstTrack = index;
+            }
+            lastTrack = index;
+        }
     };
 
     player.getCurrentTrack = function () {
