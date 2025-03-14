@@ -150,6 +150,7 @@ function oyoPlayer(width = 500) {
     tagBox.changeTextColor(defaultTextColor);
     $(player).append(tagBox);
 
+    $(player.audio).on("loadstart", loadStart);
     $(player.audio).on("loadedmetadata", loadedMetaData);
     $(player.audio).on("canplay", canPlay);
     $(player.audio).on("playing", playing);
@@ -158,6 +159,10 @@ function oyoPlayer(width = 500) {
     $(player.audio).on("ended", ended);
     $(player.audio).on("error", error);
     $(player.audio).on("volumechange", volumeChange);
+
+    function loadStart() {
+        $(player.audio).trigger("init");
+    }
 
     function loadedMetaData() {
         stateEnded = false;
@@ -168,6 +173,7 @@ function oyoPlayer(width = 500) {
         } else {
             player.changeTag(tags[counter]);
         }
+
         switch (true) {
             case !samples && player.audio.duration !== Infinity:
                 trackStart = 0;
@@ -209,7 +215,13 @@ function oyoPlayer(width = 500) {
                 trackDuration = player.audio.duration;
                 break;
         }
-        player.audio.currentTime = trackStart;
+
+        if (player.audio.duration !== Infinity &&
+            trackCurrentTime >= trackStart && trackCurrentTime <= trackEnd) {
+            player.audio.currentTime = trackCurrentTime;
+        } else {
+            player.audio.currentTime = trackStart;
+        }
 
         playpause.enable();
         volumeSlider.enable();
@@ -222,6 +234,10 @@ function oyoPlayer(width = 500) {
         } else {
             trackSlider.disable();
         }
+
+        player.audio.volume = trackVolume;
+        changeVolumePosition();
+
     }
 
     function canPlay() {
@@ -229,7 +245,8 @@ function oyoPlayer(width = 500) {
         if (difference !== 0.000001) {
             difference = 0;
         }
-        if (!statePaused && trackCurrentTime === (trackStart - difference)) {
+        if (!statePaused &&
+            (difference === 0 || trackCurrentTime === (trackStart - difference))) {
             player.audio.play();
         }
     }
@@ -378,19 +395,11 @@ function oyoPlayer(width = 500) {
     }
 
     function volumeChange(event) {
-        if (!samples || event.isTrigger) {
-            if (((player.audio.muted || player.audio.volume === 0) && speaker.state === 0) ||
-                ((!player.audio.muted && player.audio.volume !== 0) && speaker.state === 1)) {
-                speaker.changeState();
-            }
-            var left = player.audio.volume * $(".oyotrack", volumeSlider).width() - $(".oyothumb", volumeSlider).width() / 2;
-            if (player.audio.muted) {
-                left = -$(".oyothumb", volumeSlider).width() / 2;
-            }
-            $(".oyothumb", volumeSlider).css("left", left);
-            var width = left + $(".oyothumb", volumeSlider).width() / 2;
-            $(".oyotrackbefore", volumeSlider).width(width);
+        if (((player.audio.muted || player.audio.volume === 0) && speaker.state === 0) ||
+            ((!player.audio.muted && player.audio.volume !== 0) && speaker.state === 1)) {
+            speaker.changeState();
         }
+        changeVolumePosition();
     }
 
     Object.defineProperty(player, "scrollAllow", {
@@ -471,6 +480,9 @@ function oyoPlayer(width = 500) {
         },
         get currentTime() {
             return trackCurrentTime;
+        },
+        set currentTime(value) {
+            trackCurrentTime = value;
         },
         get volume() {
             return trackVolume * 100;
@@ -706,7 +718,6 @@ function oyoPlayer(width = 500) {
         $(panel).css("width", width);
         changeTrackSlider();
         $(tagBox).css("width", width);
-        $(player.audio).trigger("volumechange");
     });
     playerObserver.observe(player);
 
@@ -976,6 +987,16 @@ function oyoPlayer(width = 500) {
                 trackSlider.value = value;
             }
         }
+    }
+
+    function changeVolumePosition() {
+        if (!player.audio.muted) {
+            var value = 100 * player.audio.volume;
+        } else {
+            var value = 0;
+        }
+        value = Math.ceil(1000000 * value) / 1000000;
+        volumeSlider.value = value;
     }
 
     return player;
