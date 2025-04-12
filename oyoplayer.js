@@ -524,7 +524,7 @@ function oyoPlayer(width = 500) {
     };
 
     player.playPause = function (index) {
-        if (!Boolean(firstTrack)) {
+        if (!Boolean(lastTrack)) {
             setTrackIndexes(function () {
                 playPause();
             });
@@ -880,10 +880,11 @@ function oyoPlayer(width = 500) {
 
         async function getTrackIndexes() {
             for (var i = 1; i <= player.countSongs(); i++) {
-                await getTrackIndex(true, i);
-                if (Boolean(firstTrack)) {
-                    break;
-                }
+                await getTrackIndex(true, i).then(function() {
+                    if (Boolean(firstTrack)) {
+                        i = player.countSongs();
+                    }
+                });
             }
             var checkAgain = !((firstTrack === player.countSongs()) || !Boolean(firstTrack));
             if (!Boolean(checkAgain)) {
@@ -891,10 +892,11 @@ function oyoPlayer(width = 500) {
             }
             if (Boolean(checkAgain)) {
                 for (var i = player.countSongs(); i > 0; i--) {
-                    await getTrackIndex(false, i);
-                    if (Boolean(lastTrack)) {
-                        break;
-                    }
+                    await getTrackIndex(false, i).then(function() {
+                        if (Boolean(lastTrack)) {
+                            i = 0;
+                        }
+                    });
                 }
             }
             callback();
